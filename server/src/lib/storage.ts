@@ -115,7 +115,8 @@ async function saveDropbox(file: File, prefix: string): Promise<StoredFile> {
     body: Buffer.from(await file.arrayBuffer()),
   })
   if (!upload.ok) {
-    throw new Error(`Upload ke Dropbox gagal (${upload.status}).`)
+    const text = await upload.text().catch(() => '')
+    throw new Error(`Upload ke Dropbox gagal (${upload.status}): ${text.slice(0, 300)}`)
   }
   const uploaded = (await upload.json()) as { path_lower?: string; path_display?: string }
   const finalPath = (uploaded.path_lower ?? uploaded.path_display ?? path).toLowerCase()
