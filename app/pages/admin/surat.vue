@@ -120,7 +120,12 @@ async function remove(id: number): Promise<void> {
         <UInput v-model="judul" class="w-full" />
       </UFormField>
       <UFormField :label="`File PDF${editingId ? ' (kosongkan bila tidak diganti)' : ''}`" class="mt-3">
-        <UInput ref="fileInput" type="file" accept="application/pdf" class="w-full" />
+        <input
+          ref="fileInput"
+          type="file"
+          accept="application/pdf"
+          class="w-full rounded-md border border-default bg-default px-3 py-2 text-sm file:mr-3 file:rounded file:border-0 file:bg-muted file:px-3 file:py-1.5 file:text-sm"
+        >
       </UFormField>
       <UCheckbox v-model="isPublished" label="Publikasikan" class="mt-3" />
       <div class="mt-3 flex gap-2">
