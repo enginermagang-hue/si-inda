@@ -105,17 +105,14 @@ const clean = (v: unknown, max = 500): string | null => {
 }
 
 /** Baca body JSON dengan aman: JSON rusak → 400 (bukan 500). */
-async function parseJson(
-  c: Context,
-): Promise<{ ok: true; body: Record<string, unknown> } | { ok: false; res: Response }> {
+/** Baca body JSON dengan aman: tidak valid → null (caller me-return 400). */
+async function readJsonBody(c: Context): Promise<Record<string, unknown> | null> {
   try {
     const parsed: unknown = await c.req.json()
-    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
-      return { ok: false, res: c.json({ error: 'Body harus JSON object.' }, 400) }
-    }
-    return { ok: true, body: parsed as Record<string, unknown> }
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return null
+    return parsed as Record<string, unknown>
   } catch {
-    return { ok: false, res: c.json({ error: 'Body harus JSON valid.' }, 400) }
+    return null
   }
 }
 
@@ -127,9 +124,8 @@ adminApi.get('/statistics', async (c) => {
 })
 
 adminApi.post('/statistics', async (c) => {
-  const parsed = await parseJson(c)
-  if (!parsed.ok) return parsed.res
-  const b = parsed.body
+  const b = await readJsonBody(c)
+  if (!b) return c.json({ error: 'Body harus JSON object.' }, 400)
   if (!b || !STAT_CATEGORIES.includes(b.category as (typeof STAT_CATEGORIES)[number])) {
     return c.json({ error: `category harus salah satu: ${STAT_CATEGORIES.join(', ')}` }, 400)
   }
@@ -152,9 +148,8 @@ adminApi.post('/statistics', async (c) => {
 
 adminApi.put('/statistics/:id', async (c) => {
   const id = Number(c.req.param('id'))
-  const parsed = await parseJson(c)
-  if (!parsed.ok) return parsed.res
-  const b = parsed.body
+  const b = await readJsonBody(c)
+  if (!b) return c.json({ error: 'Body harus JSON object.' }, 400)
   const patch: Partial<typeof statistics.$inferInsert> = { updatedAt: new Date().toISOString() }
   if (b.label !== undefined) {
     const label = clean(b.label, 200)
@@ -205,9 +200,8 @@ adminApi.get('/pages', async (c) => {
 })
 
 adminApi.post('/pages', async (c) => {
-  const parsed = await parseJson(c)
-  if (!parsed.ok) return parsed.res
-  const b = parsed.body
+  const b = await readJsonBody(c)
+  if (!b) return c.json({ error: 'Body harus JSON object.' }, 400)
   const slug = clean(b.slug, 100)?.toLowerCase().replace(/[^a-z0-9-]/g, '-')
   const title = clean(b.title, 200)
   if (!slug || !title) return c.json({ error: 'slug dan title wajib diisi.' }, 400)
@@ -232,9 +226,8 @@ adminApi.post('/pages', async (c) => {
 
 adminApi.put('/pages/:id', async (c) => {
   const id = Number(c.req.param('id'))
-  const parsed = await parseJson(c)
-  if (!parsed.ok) return parsed.res
-  const b = parsed.body
+  const b = await readJsonBody(c)
+  if (!b) return c.json({ error: 'Body harus JSON object.' }, 400)
   const patch: Partial<typeof contentPages.$inferInsert> = { updatedAt: new Date().toISOString() }
   if (b.title !== undefined) {
     const title = clean(b.title, 200)
@@ -351,9 +344,8 @@ adminApi.get('/links', async (c) => {
 })
 
 adminApi.post('/links', async (c) => {
-  const parsed = await parseJson(c)
-  if (!parsed.ok) return parsed.res
-  const b = parsed.body
+  const b = await readJsonBody(c)
+  if (!b) return c.json({ error: 'Body harus JSON object.' }, 400)
   const title = clean(b.title, 200)
   const url = clean(b.url, 2000)
   if (!title || !url || !/^https?:\/\//i.test(url)) {
@@ -373,9 +365,8 @@ adminApi.post('/links', async (c) => {
 
 adminApi.put('/links/:id', async (c) => {
   const id = Number(c.req.param('id'))
-  const parsed = await parseJson(c)
-  if (!parsed.ok) return parsed.res
-  const b = parsed.body
+  const b = await readJsonBody(c)
+  if (!b) return c.json({ error: 'Body harus JSON object.' }, 400)
   const patch: Partial<typeof infoLinks.$inferInsert> = {}
   if (b.title !== undefined) {
     const title = clean(b.title, 200)
@@ -409,9 +400,8 @@ adminApi.get('/news', async (c) => {
 })
 
 adminApi.post('/news', async (c) => {
-  const parsed = await parseJson(c)
-  if (!parsed.ok) return parsed.res
-  const b = parsed.body
+  const b = await readJsonBody(c)
+  if (!b) return c.json({ error: 'Body harus JSON object.' }, 400)
   const title = clean(b.title, 300)
   if (!title) return c.json({ error: 'title wajib diisi.' }, 400)
   const [row] = await db
@@ -428,9 +418,8 @@ adminApi.post('/news', async (c) => {
 
 adminApi.put('/news/:id', async (c) => {
   const id = Number(c.req.param('id'))
-  const parsed = await parseJson(c)
-  if (!parsed.ok) return parsed.res
-  const b = parsed.body
+  const b = await readJsonBody(c)
+  if (!b) return c.json({ error: 'Body harus JSON object.' }, 400)
   const patch: Partial<typeof breakingNews.$inferInsert> = {}
   if (b.title !== undefined) {
     const title = clean(b.title, 300)
@@ -471,9 +460,8 @@ adminApi.get('/complaints', async (c) => {
 
 adminApi.put('/complaints/:id', async (c) => {
   const id = Number(c.req.param('id'))
-  const parsed = await parseJson(c)
-  if (!parsed.ok) return parsed.res
-  const b = parsed.body
+  const b = await readJsonBody(c)
+  if (!b) return c.json({ error: 'Body harus JSON object.' }, 400)
   const patch: Partial<typeof complaints.$inferInsert> = { updatedAt: new Date().toISOString() }
   if (b.status !== undefined) {
     if (!COMPLAINT_STATUS.includes(b.status as (typeof COMPLAINT_STATUS)[number])) {
@@ -507,9 +495,8 @@ adminApi.get('/settings', async (c) => {
 })
 
 adminApi.put('/settings', async (c) => {
-  const parsed = await parseJson(c)
-  if (!parsed.ok) return parsed.res
-  const b = parsed.body
+  const b = await readJsonBody(c)
+  if (!b) return c.json({ error: 'Body harus JSON object.' }, 400)
   if (!b || typeof b !== 'object') return c.json({ error: 'Body harus JSON object.' }, 400)
   for (const [key, value] of Object.entries(b)) {
     if (!EDITABLE_SETTINGS.includes(key)) continue

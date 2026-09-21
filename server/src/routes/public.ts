@@ -89,7 +89,7 @@ publicApi.get('/breaking-news', async (c) => {
 // GET /api/settings/public — hanya key yang aman untuk publik
 const PUBLIC_SETTINGS = ['site_name', 'site_tagline', 'sop_drive_url', 'contact_wa', 'footer_text']
 publicApi.get('/settings/public', async (c) => {
-  const rows = await db.query.settings.findMany()
+  const rows: Array<{ key: string; value: string }> = await db.query.settings.findMany()
   const out: Record<string, string> = {}
   for (const r of rows) if (PUBLIC_SETTINGS.includes(r.key)) out[r.key] = r.value
   return c.json({ data: out })
