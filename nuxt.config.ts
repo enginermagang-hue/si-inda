@@ -30,7 +30,7 @@ export default defineNuxtConfig({
     dropboxAppKey: '',
     dropboxAppSecret: '',
     dropboxRefreshToken: '',
-    dropboxFolder: '/siindah/surat',
+    dropboxFolder: '/si-inda/surat',
     adminName: 'Administrator',
     adminUsername: 'admin',
     adminPassword: 'admin123',

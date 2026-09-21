@@ -65,7 +65,7 @@ function dropboxEnv(): { appKey: string; appSecret: string; refreshToken: string
   const appKey = (config.dropboxAppKey as string)?.trim() ?? ''
   const appSecret = (config.dropboxAppSecret as string)?.trim() ?? ''
   const refreshToken = (config.dropboxRefreshToken as string)?.trim() ?? ''
-  const folder = (config.dropboxFolder as string)?.trim() || '/siindah/surat'
+  const folder = (config.dropboxFolder as string)?.trim() || '/si-inda/surat'
   if (!appKey || !appSecret || !refreshToken) {
     throw new Error('NUXT_DROPBOX_APP_KEY / _APP_SECRET / _REFRESH_TOKEN wajib diisi untuk driver dropbox.')
   }
