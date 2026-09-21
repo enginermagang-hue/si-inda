@@ -22,6 +22,28 @@ app.get('/api/health', (c) =>
   c.json({ ok: true, storage: storageDriver, time: new Date().toISOString() }),
 )
 
+// Diagnostik remote (tanpa secret): kehadiran env + info runtime.
+// Dipakai untuk membedakan "function jalan, env kurang" vs "function hang".
+app.get('/api/debug', (c) =>
+  c.json({
+    ok: true,
+    runtime: 'vercel' in process.env ? 'vercel' : 'node',
+    node: process.version,
+    storage: storageDriver,
+    env: {
+      jwtSecret: Boolean(process.env.JWT_SECRET?.trim()),
+      tursoUrl: Boolean(process.env.TURSO_URL?.trim()),
+      tursoToken: Boolean(process.env.TURSO_AUTH_TOKEN?.trim()),
+      dropbox: Boolean(
+        process.env.DROPBOX_APP_KEY?.trim() &&
+          process.env.DROPBOX_APP_SECRET?.trim() &&
+          process.env.DROPBOX_REFRESH_TOKEN?.trim(),
+      ),
+    },
+    time: new Date().toISOString(),
+  }),
+)
+
 app.route('/api', publicApi)
 app.route('/api/admin', adminApi)
 
