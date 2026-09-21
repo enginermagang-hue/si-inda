@@ -1,0 +1,145 @@
+<script setup lang="ts">
+import { api, type Complaint } from '~/composables/api'
+
+definePageMeta({ layout: 'admin', middleware: 'admin' })
+
+const rows = ref<Complaint[]>([])
+const loading = ref(true)
+const error = ref('')
+const filter = ref('')
+const selected = ref<Complaint | null>(null)
+const newStatus = ref<Complaint['status']>('baru')
+const adminNote = ref('')
+const saving = ref(false)
+
+const statusItems = [
+  { value: '', label: 'Semua status' },
+  { value: 'baru', label: 'Baru' },
+  { value: 'diproses', label: 'Diproses' },
+  { value: 'selesai', label: 'Selesai' },
+]
+
+async function load(): Promise<void> {
+  loading.value = true
+  try {
+    const res = await api.get<{ data: Complaint[] }>('/admin/complaints')
+    rows.value = res.data
+    if (selected.value) {
+      selected.value = rows.value.find((r) => r.id === selected.value?.id) ?? null
+    }
+  } catch (e) {
+    error.value = e instanceof Error ? e.message : 'Gagal memuat.'
+  } finally {
+    loading.value = false
+  }
+}
+
+onMounted(load)
+
+const filtered = computed(() => (filter.value ? rows.value.filter((r) => r.status === filter.value) : rows.value))
+
+function open(row: Complaint): void {
+  selected.value = row
+  newStatus.value = row.status
+  adminNote.value = row.adminNote ?? ''
+}
+
+async function save(): Promise<void> {
+  if (!selected.value) return
+  error.value = ''
+  saving.value = true
+  try {
+    await api.put(`/admin/complaints/${selected.value.id}`, {
+      status: newStatus.value,
+      adminNote: adminNote.value.trim() ? adminNote.value.trim() : null,
+    })
+    await load()
+  } catch (e) {
+    error.value = e instanceof Error ? e.message : 'Gagal menyimpan.'
+  } finally {
+    saving.value = false
+  }
+}
+
+async function remove(id: number): Promise<void> {
+  if (!confirm('Hapus pengaduan ini permanen?')) return
+  await api.del(`/admin/complaints/${id}`)
+  selected.value = null
+  await load()
+}
+
+const statusColor = (s: string): 'error' | 'warning' | 'success' =>
+  s === 'baru' ? 'error' : s === 'diproses' ? 'warning' : 'success'
+
+function fmt(iso: string): string {
+  return new Date(iso).toLocaleString('id-ID', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+}
+</script>
+
+<template>
+  <div>
+    <div class="flex flex-wrap items-center justify-between gap-3">
+      <div>
+        <h1 class="text-2xl font-bold tracking-tight">Pengaduan Masuk</h1>
+        <p class="mt-1 text-sm text-muted">Ubah status menjadi diproses/selesai. Catatan admin bersifat internal.</p>
+      </div>
+      <USelect v-model="filter" :items="statusItems" value-key="value" label-key="label" class="w-44" />
+    </div>
+
+    <UAlert v-if="error" color="error" variant="soft" :title="error" class="mt-4" />
+
+    <div class="mt-4 grid gap-4 lg:grid-cols-2">
+      <div>
+        <p v-if="loading" class="text-sm text-muted">Memuat…</p>
+        <div v-else class="space-y-2">
+          <UCard
+            v-for="row in filtered"
+            :key="row.id"
+            class="cursor-pointer"
+            :variant="selected?.id === row.id ? 'solid' : 'outline'"
+            @click="open(row)"
+          >
+            <div class="flex items-center justify-between gap-2">
+              <p class="font-medium">#{{ row.id }} — {{ row.nama }}</p>
+              <UBadge :color="statusColor(row.status)" variant="soft">{{ row.status }}</UBadge>
+            </div>
+            <p class="mt-1 line-clamp-1 text-sm text-muted">{{ row.kategori }} • {{ row.isi }}</p>
+            <p class="mt-1 text-xs text-muted">{{ fmt(row.createdAt) }}</p>
+          </UCard>
+          <UEmpty v-if="!filtered.length" title="Tidak ada pengaduan" class="mt-2" />
+        </div>
+      </div>
+
+      <UCard v-if="selected" class="h-fit">
+        <div class="flex items-start justify-between gap-2">
+          <div>
+            <p class="font-bold">#{{ selected.id }} — {{ selected.nama }}</p>
+            <p class="text-sm text-muted">{{ selected.kontak }} • {{ selected.kategori }}</p>
+            <p class="text-xs text-muted">{{ fmt(selected.createdAt) }}</p>
+          </div>
+          <UButton variant="link" color="error" @click="remove(selected.id)">Hapus</UButton>
+        </div>
+        <p class="mt-3 whitespace-pre-wrap rounded-lg bg-muted p-3 text-sm">{{ selected.isi }}</p>
+        <div class="mt-4 grid gap-3">
+          <UFormField label="Status">
+            <USelect
+              v-model="newStatus"
+              :items="[
+                { value: 'baru', label: 'Baru' },
+                { value: 'diproses', label: 'Diproses' },
+                { value: 'selesai', label: 'Selesai' },
+              ]"
+              value-key="value"
+              label-key="label"
+              class="w-full"
+            />
+          </UFormField>
+          <UFormField label="Catatan admin (internal)">
+            <UTextarea v-model="adminNote" :rows="3" class="w-full" />
+          </UFormField>
+          <UButton :loading="saving" @click="save">Simpan perubahan</UButton>
+        </div>
+      </UCard>
+    </div>
+  </div>
+</template>
