@@ -3,16 +3,29 @@ import { extname, join } from 'node:path'
 import { randomUUID } from 'node:crypto'
 
 /**
- * Driver penyimpanan file PDF surat.
+ * Driver penyimpanan file PDF.
  * - 'local'   : public/uploads (development, diserve otomatis).
  * - 'dropbox' : Dropbox API (production — disk serverless tidak permanen).
  * Modul ini terisolasi: ganti driver cukup via env NUXT_STORAGE_DRIVER.
+ *
+ * Path Dropbox selalu relatif ke root namespace aplikasi. Untuk aplikasi
+ * bertipe App folder, root tersebut adalah App Folder-nya sendiri
+ * (mis. `si-inda`), sehingga folder kategori cukup ditulis tanpa awalan
+ * nama app: `surat`, `sop`, dst.
  */
 
 export function storageDriver(): 'local' | 'dropbox' {
   const config = useRuntimeConfig()
-  return (config.storageDriver as string)?.trim() === 'dropbox' ? 'dropbox' : 'local'
+  return norm(config.storageDriver as string) === 'dropbox' ? 'dropbox' : 'local'
 }
+
+/** Folder kategori di Dropbox (relatif ke root namespace aplikasi). */
+export const DROPBOX_FOLDERS = {
+  SURAT: 'surat',
+  SOP: 'sop',
+} as const
+
+export type DropboxFolderKey = keyof typeof DROPBOX_FOLDERS
 
 export const UPLOAD_DIR = join(process.cwd(), 'public', 'uploads')
 const MAX_PDF_BYTES = 10 * 1024 * 1024 // 10 MB
@@ -30,9 +43,15 @@ export interface PdfInput {
   type: string
 }
 
+/** Normalisasi value env: buang whitespace + tanda kutip pembungkus. */
+export function norm(v?: string): string {
+  if (!v) return ''
+  return v.trim().replace(/^["']|["']$/g, '')
+}
+
 function assertPdf(size: number, type: string): void {
-  if (type !== 'application/pdf') throw new Error('File harus berformat PDF.')
-  if (size > MAX_PDF_BYTES) throw new Error('Ukuran PDF maksimal 10 MB.')
+  if (type !== 'application/pdf') throw createError({ statusCode: 400, message: 'File harus berformat PDF.' })
+  if (size > MAX_PDF_BYTES) throw createError({ statusCode: 400, message: 'Ukuran PDF maksimal 10 MB.' })
 }
 
 /* ---------- Driver lokal ---------- */
@@ -60,41 +79,135 @@ function deleteLocal(relativePath: string | null | undefined): void {
 
 /* ---------- Driver Dropbox ---------- */
 
-function dropboxEnv(): { appKey: string; appSecret: string; refreshToken: string; folder: string } {
+const TOKEN_ENDPOINT = 'https://api.dropboxapi.com/oauth2/token'
+const TOKEN_EXPIRY_BUFFER_MS = 60_000
+
+function dropboxEnv(): {
+  appKey: string
+  appSecret: string
+  refreshToken: string
+  staticToken: string
+  base: string
+} {
   const config = useRuntimeConfig()
-  const appKey = (config.dropboxAppKey as string)?.trim() ?? ''
-  const appSecret = (config.dropboxAppSecret as string)?.trim() ?? ''
-  const refreshToken = (config.dropboxRefreshToken as string)?.trim() ?? ''
-  const folder = (config.dropboxFolder as string)?.trim() || '/si-inda/surat'
+  const appKey = norm(config.dropboxAppKey as string)
+  const appSecret = norm(config.dropboxAppSecret as string)
+  const refreshToken = norm(config.dropboxRefreshToken as string)
+  const staticToken = norm(config.dropboxToken as string)
+  const base = norm(config.dropboxBase as string).replace(/^\/+|\/+$/g, '')
   if (!appKey || !appSecret || !refreshToken) {
-    throw new Error('NUXT_DROPBOX_APP_KEY / _APP_SECRET / _REFRESH_TOKEN wajib diisi untuk driver dropbox.')
+    if (!staticToken) {
+      throw createError({
+        statusCode: 500,
+        message: 'NUXT_DROPBOX_APP_KEY / _APP_SECRET / _REFRESH_TOKEN wajib diisi untuk driver dropbox.',
+      })
+    }
   }
-  return { appKey, appSecret, refreshToken, folder }
+  return { appKey, appSecret, refreshToken, staticToken, base }
 }
 
 let cachedToken: { token: string; expiresAt: number } | null = null
+let refreshing: Promise<string> | null = null
 
-async function dropboxAccessToken(): Promise<string> {
-  if (cachedToken && Date.now() < cachedToken.expiresAt) return cachedToken.token
-  const { appKey, appSecret, refreshToken } = dropboxEnv()
-  const res = await fetch('https://api.dropboxapi.com/oauth2/token', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: new URLSearchParams({
+export async function dropboxAccessToken(): Promise<string> {
+  const { appKey, appSecret, refreshToken, staticToken } = dropboxEnv()
+
+  if (!refreshToken) {
+    if (!staticToken) throw createError({ statusCode: 500, message: 'Dropbox token belum dikonfigurasi.' })
+    return staticToken
+  }
+
+  if (cachedToken && cachedToken.expiresAt > Date.now() + TOKEN_EXPIRY_BUFFER_MS) {
+    return cachedToken.token
+  }
+
+  if (refreshing) return refreshing
+
+  if (!appKey || !appSecret) {
+    if (staticToken) {
+      console.warn('[Dropbox] app key/secret belum dikonfigurasi, fallback ke static token')
+      return staticToken
+    }
+    throw createError({ statusCode: 500, message: 'Dropbox app key/secret belum dikonfigurasi (untuk refresh token).' })
+  }
+
+  refreshing = (async () => {
+    const body = new URLSearchParams({
       grant_type: 'refresh_token',
       refresh_token: refreshToken,
       client_id: appKey,
       client_secret: appSecret,
-    }),
+    })
+    const res = await fetch(TOKEN_ENDPOINT, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: body.toString(),
+    })
+    if (!res.ok) {
+      const text = await res.text()
+      console.error('[Dropbox] refresh token gagal', { status: res.status, body: text.slice(0, 300) })
+      if (staticToken) {
+        console.warn('[Dropbox] fallback ke static token')
+        return staticToken
+      }
+      throw createError({ statusCode: 502, message: `Gagal refresh token Dropbox (${res.status}): ${text.slice(0, 200)}` })
+    }
+    const json = (await res.json()) as { access_token?: string; expires_in?: number }
+    if (!json.access_token) throw createError({ statusCode: 502, message: 'Respons token Dropbox tidak valid.' })
+    cachedToken = { token: json.access_token, expiresAt: Date.now() + (json.expires_in || 14400) * 1000 }
+    return cachedToken.token
+  })().finally(() => {
+    refreshing = null
   })
-  if (!res.ok) throw new Error(`Gagal refresh token Dropbox (${res.status}). Periksa kredensial.`)
-  const data = (await res.json()) as { access_token?: string; expires_in?: number }
-  if (!data.access_token) throw new Error('Respons token Dropbox tidak valid.')
-  cachedToken = { token: data.access_token, expiresAt: Date.now() + (data.expires_in ?? 14_000) * 1000 - 60_000 }
-  return cachedToken.token
+
+  return refreshing
 }
 
-async function dropboxRpc(endpoint: string, body: unknown): Promise<unknown> {
+function extractDropboxTag(bodyText: string): string {
+  try {
+    const obj = JSON.parse(bodyText) as Record<string, unknown>
+    const err = obj?.error as Record<string, unknown> | undefined
+    const candidates: string[] = []
+    const tag = err?.['.tag']
+    if (typeof tag === 'string') candidates.push(tag)
+    const pathTag = (err?.path as Record<string, unknown> | undefined)?.['.tag']
+    if (typeof pathTag === 'string') candidates.push(pathTag)
+    if (typeof obj?.error_summary === 'string') {
+      candidates.push(obj.error_summary.split('/')[0] as string)
+    }
+    return [...new Set(candidates)].join('|')
+  } catch {
+    return ''
+  }
+}
+
+export function mapDropboxError(status: number, tag: string, scopeFor: 'read' | 'write', summary: string) {
+  const tokenErrs = ['expired_access_token', 'invalid_access_token', 'invalid_token', 'token_expired', 'expired']
+  const scopeErrs = ['no_permission', 'missing_scope', 'insufficient_permissions', 'not_allowed']
+  const notFoundErrs = ['not_found', 'path/not_found']
+
+  if (status === 401 || tokenErrs.some((t) => tag.includes(t))) {
+    return { statusCode: 401, statusMessage: 'Token Dropbox tidak valid atau kedaluwarsa. Perbarui token di konfigurasi.' }
+  }
+  if (status === 403 || scopeErrs.some((t) => tag.includes(t))) {
+    return {
+      statusCode: 403,
+      statusMessage:
+        scopeFor === 'read'
+          ? 'Token Dropbox tidak memiliki izin baca file (scope files.content.read).'
+          : 'Token Dropbox tidak memiliki izin tulis file (scope files.content.write).',
+    }
+  }
+  if (status === 404 || notFoundErrs.some((t) => tag.includes(t))) {
+    return { statusCode: 404, statusMessage: 'File tidak ditemukan di Dropbox.' }
+  }
+  if (status === 429 || tag.includes('rate_limit') || tag.includes('too_many')) {
+    return { statusCode: 429, statusMessage: 'Terlalu banyak permintaan ke Dropbox, coba lagi nanti.' }
+  }
+  return { statusCode: 502, statusMessage: `Dropbox error (${status}): ${summary || tag || 'unknown'}` }
+}
+
+async function dropboxRpc(endpoint: string, body: unknown, scopeFor: 'read' | 'write' = 'write'): Promise<unknown> {
   const token = await dropboxAccessToken()
   const res = await fetch(`https://api.dropboxapi.com/2/${endpoint}`, {
     method: 'POST',
@@ -103,17 +216,25 @@ async function dropboxRpc(endpoint: string, body: unknown): Promise<unknown> {
   })
   if (!res.ok) {
     const text = await res.text().catch(() => '')
-    throw new Error(`Dropbox API ${endpoint} gagal (${res.status}): ${text.slice(0, 300)}`)
+    const tag = extractDropboxTag(text)
+    console.error(`[Dropbox] ${endpoint} gagal`, { status: res.status, tag, body: text.slice(0, 300) })
+    throw createError(mapDropboxError(res.status, tag, scopeFor, text.slice(0, 200)))
   }
   return res.json()
 }
 
-async function saveDropbox(input: PdfInput, prefix: string): Promise<StoredFile> {
+/** Bentuk path Dropbox untuk kategori: `/<kategori>/<file>` (relatif ke root namespace aplikasi). */
+export function dropboxFolderPath(folderKey: DropboxFolderKey): string {
+  const { base } = dropboxEnv()
+  const folder = DROPBOX_FOLDERS[folderKey]
+  return base ? `/${base}/${folder}` : `/${folder}`
+}
+
+async function saveDropbox(input: PdfInput, prefix: string, folderKey: DropboxFolderKey): Promise<StoredFile> {
   assertPdf(input.bytes.length, input.type)
-  const { folder } = dropboxEnv()
   const token = await dropboxAccessToken()
   const filename = `${prefix}-${randomUUID()}.pdf`
-  const path = `${folder}/${filename}`
+  const path = `${dropboxFolderPath(folderKey)}/${filename}`
   const upload = await fetch('https://content.dropboxapi.com/2/files/upload', {
     method: 'POST',
     headers: {
@@ -125,7 +246,9 @@ async function saveDropbox(input: PdfInput, prefix: string): Promise<StoredFile>
   })
   if (!upload.ok) {
     const text = await upload.text().catch(() => '')
-    throw new Error(`Upload ke Dropbox gagal (${upload.status}): ${text.slice(0, 300)}`)
+    const tag = extractDropboxTag(text)
+    console.error('[Dropbox] upload gagal', { status: upload.status, tag, body: text.slice(0, 300) })
+    throw createError(mapDropboxError(upload.status, tag, 'write', text.slice(0, 200)))
   }
   const uploaded = (await upload.json()) as { path_lower?: string; path_display?: string }
   const finalPath = (uploaded.path_lower ?? uploaded.path_display ?? path).toLowerCase()
@@ -133,7 +256,7 @@ async function saveDropbox(input: PdfInput, prefix: string): Promise<StoredFile>
     path: finalPath,
     settings: { requested_visibility: 'public' },
   })) as { url?: string }
-  if (!shared.url) throw new Error('Gagal membuat link sharing Dropbox.')
+  if (!shared.url) throw createError({ statusCode: 502, message: 'Gagal membuat link sharing Dropbox.' })
   // ?dl=0 = halaman preview → ?raw=1 = langsung unduh/stream PDF.
   const url = shared.url.replace('dl=0', 'raw=1')
   return { url, path: finalPath }
@@ -146,8 +269,12 @@ async function deleteDropbox(path: string | null | undefined): Promise<void> {
 
 /* ---------- API umum ---------- */
 
-export async function savePdfUpload(input: PdfInput, prefix = 'surat'): Promise<StoredFile> {
-  if (storageDriver() === 'dropbox') return saveDropbox(input, prefix)
+export async function savePdfUpload(
+  input: PdfInput,
+  prefix = 'surat',
+  folderKey: DropboxFolderKey = 'SURAT',
+): Promise<StoredFile> {
+  if (storageDriver() === 'dropbox') return saveDropbox(input, prefix, folderKey)
   return saveLocal(input, prefix)
 }
 
