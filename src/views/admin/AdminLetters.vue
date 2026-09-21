@@ -91,6 +91,10 @@ async function remove(id: number): Promise<void> {
   await api.del(`/admin/letters/${id}`)
   await load()
 }
+
+function fileUrl(path: string): string {
+  return /^https?:\/\//i.test(path) ? path : `/${path}`
+}
 </script>
 
 <template>
@@ -145,7 +149,7 @@ async function remove(id: number): Promise<void> {
           <p class="text-xs text-slate-400">{{ row.nomorSurat }} • {{ row.tanggalSurat.slice(0, 10) }} •
             <span v-if="row.isPublished" class="text-emerald-600">Publish</span>
             <span v-else class="text-slate-400">Draft</span>
-            <a v-if="row.filePath" :href="`/${row.filePath}`" target="_blank" rel="noopener" class="ml-1 text-emerald-700 underline">PDF</a>
+            <a v-if="row.filePath" :href="fileUrl(row.filePath)" target="_blank" rel="noopener" class="ml-1 text-emerald-700 underline">PDF</a>
           </p>
         </div>
         <div class="flex shrink-0 gap-3">

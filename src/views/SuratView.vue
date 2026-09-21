@@ -19,6 +19,11 @@ onMounted(async () => {
 function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })
 }
+
+/** filePath bisa path relatif lokal (uploads/...) atau URL absolut (Dropbox). */
+function fileUrl(path: string): string {
+  return /^https?:\/\//i.test(path) ? path : `/${path}`
+}
 </script>
 
 <template>
@@ -40,7 +45,7 @@ function formatDate(iso: string): string {
         </div>
         <a
           v-if="letter.filePath"
-          :href="`/${letter.filePath}`"
+          :href="fileUrl(letter.filePath)"
           target="_blank"
           rel="noopener"
           class="shrink-0 rounded-lg bg-emerald-600 px-4 py-2 text-center text-sm font-medium text-white transition hover:bg-emerald-500"

@@ -294,14 +294,19 @@ adminApi.post('/letters', async (c) => {
     return c.json({ error: 'nomor_surat, judul, dan tanggal_surat wajib diisi.' }, 400)
   }
   let filePath: string | null = null
+  let dropboxPath: string | null = null
   try {
-    if (f.file) filePath = await savePdfUpload(f.file)
+    if (f.file) {
+      const stored = await savePdfUpload(f.file)
+      filePath = stored.url
+      dropboxPath = stored.path
+    }
   } catch (e) {
     return c.json({ error: e instanceof Error ? e.message : 'Upload gagal.' }, 400)
   }
   const [row] = await db
     .insert(letters)
-    .values({ nomorSurat: f.nomorSurat, judul: f.judul, tanggalSurat: f.tanggalSurat, filePath, isPublished: f.isPublished ? 1 : 0 })
+    .values({ nomorSurat: f.nomorSurat, judul: f.judul, tanggalSurat: f.tanggalSurat, filePath, dropboxPath, isPublished: f.isPublished ? 1 : 0 })
     .returning()
   return c.json({ data: row }, 201)
 })
@@ -318,8 +323,10 @@ adminApi.put('/letters/:id', async (c) => {
   patch.isPublished = f.isPublished ? 1 : 0
   try {
     if (f.file) {
-      patch.filePath = await savePdfUpload(f.file)
-      deleteStoredFile(current.filePath)
+      const stored = await savePdfUpload(f.file)
+      patch.filePath = stored.url
+      patch.dropboxPath = stored.path
+      await deleteStoredFile(current.filePath, current.dropboxPath)
     }
   } catch (e) {
     return c.json({ error: e instanceof Error ? e.message : 'Upload gagal.' }, 400)
@@ -332,7 +339,7 @@ adminApi.delete('/letters/:id', async (c) => {
   const id = Number(c.req.param('id'))
   const rows = await db.delete(letters).where(eq(letters.id, id)).returning()
   if (!rows.length) return c.json({ error: 'Surat tidak ditemukan.' }, 404)
-  deleteStoredFile(rows[0].filePath)
+  await deleteStoredFile(rows[0].filePath, rows[0].dropboxPath)
   return c.json({ message: 'Surat dihapus.' })
 })
 
