@@ -1,67 +1,221 @@
 <script setup lang="ts">
-import type { NavigationMenuItem } from '@nuxt/ui'
-import { useAuthStore } from '~/stores/site'
+import type { DropdownMenuItem, NavigationMenuItem } from '@nuxt/ui'
+import { useAuthStore, useSiteStore } from '~/stores/site'
+
+const open = ref(true)
 
 const auth = useAuthStore()
-const route = useRoute()
+const site = useSiteStore()
+const colorMode = useColorMode()
 
-const links = computed<NavigationMenuItem[]>(() => [
-  { label: 'Dashboard', to: '/admin', exact: true },
-  { label: 'Statistik', to: '/admin/statistik' },
-  { label: 'Halaman Syarat', to: '/admin/halaman' },
-  { label: 'Surat Informasi', to: '/admin/surat' },
-  { label: 'Link Informasi', to: '/admin/link' },
-  { label: 'Breaking News', to: '/admin/berita' },
-  { label: 'Pengaduan', to: '/admin/pengaduan' },
-  { label: 'Pengaturan', to: '/admin/pengaturan' },
-  { label: 'Ganti Password', to: '/admin/password' },
-])
-
-const mustChange = computed(() => auth.admin?.mustChangePassword === true)
+await site.load()
 
 async function logout(): Promise<void> {
   await auth.logout()
   await navigateTo('/admin/login')
 }
+
+function getItems(state: 'collapsed' | 'expanded') {
+  return [
+    {
+      label: 'Dashboard',
+      icon: 'i-lucide-inbox',
+      to: '/admin',
+      exact: true
+    },
+    {
+      label: 'Statistik',
+      icon: 'i-lucide-chart-column',
+      to: '/admin/statistik'
+    },
+    {
+      label: 'Halaman Syarat',
+      icon: 'i-lucide-file-text',
+      to: '/admin/halaman'
+    },
+    {
+      label: 'Surat Informasi',
+      icon: 'i-lucide-mail',
+      to: '/admin/surat'
+    },
+    {
+      label: 'Link Informasi',
+      icon: 'i-lucide-link',
+      to: '/admin/link'
+    },
+    {
+      label: 'Breaking News',
+      icon: 'i-lucide-newspaper',
+      to: '/admin/berita'
+    },
+    {
+      label: 'Pengaduan',
+      icon: 'i-lucide-message-square',
+      to: '/admin/pengaduan'
+    },
+    {
+      label: 'Pengaturan',
+      icon: 'i-lucide-settings',
+      defaultOpen: true,
+      children:
+        state === 'expanded'
+          ? [
+              {
+                label: 'Umum',
+                icon: 'i-lucide-sliders-horizontal',
+                to: '/admin/pengaturan'
+              },
+              {
+                label: 'Ganti Password',
+                icon: 'i-lucide-key-round',
+                to: '/admin/password'
+              }
+            ]
+          : []
+    }
+  ] satisfies NavigationMenuItem[]
+}
+
+const user = computed(() => ({
+  name: auth.admin?.name ?? 'Admin',
+  avatar: {
+    alt: auth.admin?.name ?? 'Admin'
+  }
+}))
+
+const userItems = computed<DropdownMenuItem[][]>(() => [
+  [
+    {
+      label: 'Ganti Password',
+      icon: 'i-lucide-key-round',
+      to: '/admin/password'
+    },
+    {
+      label: 'Lihat Situs',
+      icon: 'i-lucide-globe',
+      to: '/'
+    }
+  ],
+  [
+    {
+      label: 'Appearance',
+      icon: 'i-lucide-sun-moon',
+      children: [
+        {
+          label: 'Light',
+          icon: 'i-lucide-sun',
+          type: 'checkbox',
+          checked: colorMode.value === 'light',
+          onUpdateChecked(checked: boolean) {
+            if (checked) {
+              colorMode.preference = 'light'
+            }
+          },
+          onSelect(e: Event) {
+            e.preventDefault()
+          }
+        },
+        {
+          label: 'Dark',
+          icon: 'i-lucide-moon',
+          type: 'checkbox',
+          checked: colorMode.value === 'dark',
+          onUpdateChecked(checked: boolean) {
+            if (checked) {
+              colorMode.preference = 'dark'
+            }
+          },
+          onSelect(e: Event) {
+            e.preventDefault()
+          }
+        }
+      ]
+    }
+  ],
+  [
+    {
+      label: 'Log out',
+      icon: 'i-lucide-log-out',
+      onSelect: logout
+    }
+  ]
+])
 </script>
 
 <template>
-  <div class="flex min-h-screen bg-muted text-default">
-    <aside class="hidden w-60 shrink-0 flex-col bg-inverted p-4 text-inverted md:flex">
-      <p class="px-2 py-3 font-bold">SIINDAH Admin</p>
-      <p class="px-2 pb-3 text-xs opacity-70">{{ auth.admin?.name }} ({{ auth.admin?.username }})</p>
-      <UNavigationMenu :items="links" orientation="vertical" variant="link" class="flex-1" />
-      <UButton to="/" variant="ghost" color="neutral" class="justify-start">
-        ← Lihat situs
-      </UButton>
-      <UButton variant="ghost" color="error" class="justify-start" @click="logout">
-        Keluar
-      </UButton>
-    </aside>
+  <div class="flex flex-1">
+    <USidebar
+      v-model:open="open"
+      collapsible="icon"
+      rail
+      :ui="{
+        container: 'h-full',
+        inner: 'bg-elevated/25 divide-transparent',
+        body: 'py-0'
+      }"
+    >
+      <template #header>
+        <UButton
+          icon="i-lucide-school"
+          :label="site.settings.site_name"
+          to="/admin"
+          color="neutral"
+          variant="ghost"
+          block
+          class="overflow-hidden"
+          :ui="{
+            label: 'truncate'
+          }"
+        />
+      </template>
 
-    <div class="min-w-0 flex-1">
-      <div class="sticky top-0 z-10 border-b border-default bg-default px-4 py-3">
-        <p class="font-semibold md:hidden">SIINDAH Admin</p>
-        <UNavigationMenu :items="links" variant="pill" class="hidden overflow-x-auto md:flex" />
-        <div class="mt-2 flex md:hidden">
-          <UButton size="sm" variant="outline" color="error" @click="logout">Keluar</UButton>
-        </div>
-        <UNavigationMenu :items="links" orientation="vertical" class="mt-2 md:hidden" />
+      <template #default="{ state }">
+        <UNavigationMenu
+          :key="state"
+          :items="getItems(state)"
+          orientation="vertical"
+          :ui="{ link: 'p-1.5 overflow-hidden' }"
+        />
+      </template>
+
+      <template #footer>
+        <UDropdownMenu
+          :items="userItems"
+          :content="{ align: 'center', collisionPadding: 12 }"
+          :ui="{ content: 'w-(--reka-dropdown-menu-trigger-width) min-w-48' }"
+        >
+          <UButton
+            v-bind="user"
+            :label="user?.name"
+            trailing-icon="i-lucide-chevrons-up-down"
+            color="neutral"
+            variant="ghost"
+            square
+            class="w-full data-[state=open]:bg-elevated overflow-hidden"
+            :ui="{
+              trailingIcon: 'text-dimmed ms-auto'
+            }"
+          />
+        </UDropdownMenu>
+      </template>
+    </USidebar>
+
+    <div class="flex-1 flex flex-col">
+      <div class="h-(--ui-header-height) shrink-0 flex items-center px-4 border-b border-default">
+        <UButton
+          icon="i-lucide-panel-left"
+          color="neutral"
+          variant="ghost"
+          aria-label="Toggle sidebar"
+          @click="open = !open"
+        />
       </div>
 
-      <UAlert
-        v-if="mustChange && route.path !== '/admin/password'"
-        color="warning"
-        variant="soft"
-        title="Anda login dengan password awal."
-        description="Ganti password sekarang sebelum mengelola konten."
-        :actions="[{ label: 'Ganti password', to: '/admin/password' }]"
-        class="m-4 mb-0"
-      />
-
-      <main class="mx-auto max-w-5xl p-4 sm:p-6">
-        <slot />
-      </main>
+      <div class="flex-1 p-4">
+        <main class="mx-auto max-w-5xl">
+          <slot />
+        </main>
+      </div>
     </div>
   </div>
 </template>

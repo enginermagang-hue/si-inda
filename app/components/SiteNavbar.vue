@@ -97,32 +97,25 @@ const items = computed<NavigationMenuItem[][]>(() => [
     },
   ],
 ])
-
-const mobileOpen = ref(false)
 </script>
 
 <template>
-  <header class="sticky top-0 z-40 border-b border-default bg-default/95 backdrop-blur">
-    <div class="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3">
-      <NuxtLink to="/" class="flex items-center gap-3" @click="mobileOpen = false">
-        <span class="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-xl font-bold text-white">
-          {{ site.settings.site_name.charAt(0) }}
-        </span>
-        <span class="leading-tight">
-          <span class="block text-sm font-bold tracking-tight sm:text-base">
-            {{ site.settings.site_name }}
-          </span>
-          <span class="hidden text-xs text-muted sm:block">{{ site.settings.site_tagline }}</span>
-        </span>
-      </NuxtLink>
+  <UHeader :title="site.settings.site_name">
+    <template #title>
+      <SiteLogo />
+      <span class="text-sm font-bold tracking-tight sm:text-base">
+        {{ site.settings.site_name }}
+      </span>
+    </template>
 
-      <UNavigationMenu :items="items" variant="link" class="hidden lg:flex" />
+    <UNavigationMenu :items="items" />
 
-      <UButton icon="i-lucide-menu" variant="ghost" color="neutral" aria-label="Buka menu" class="lg:hidden" @click="mobileOpen = !mobileOpen" />
-    </div>
+    <template #right>
+      <UColorModeButton />
+    </template>
 
-    <nav v-if="mobileOpen" class="border-t border-default px-4 py-2 lg:hidden">
-      <UNavigationMenu :items="items" orientation="vertical" @click="mobileOpen = false" />
-    </nav>
-  </header>
+    <template #body>
+      <UNavigationMenu :items="items" orientation="vertical" class="-mx-2.5" />
+    </template>
+  </UHeader>
 </template>

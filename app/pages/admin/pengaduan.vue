@@ -6,14 +6,14 @@ definePageMeta({ layout: 'admin', middleware: 'admin' })
 const rows = ref<Complaint[]>([])
 const loading = ref(true)
 const error = ref('')
-const filter = ref('')
+const filter = ref('all')
 const selected = ref<Complaint | null>(null)
 const newStatus = ref<Complaint['status']>('baru')
 const adminNote = ref('')
 const saving = ref(false)
 
 const statusItems = [
-  { value: '', label: 'Semua status' },
+  { value: 'all', label: 'Semua status' },
   { value: 'baru', label: 'Baru' },
   { value: 'diproses', label: 'Diproses' },
   { value: 'selesai', label: 'Selesai' },
@@ -36,7 +36,9 @@ async function load(): Promise<void> {
 
 onMounted(load)
 
-const filtered = computed(() => (filter.value ? rows.value.filter((r) => r.status === filter.value) : rows.value))
+const filtered = computed(() =>
+  filter.value === 'all' ? rows.value : rows.value.filter((r) => r.status === filter.value),
+)
 
 function open(row: Complaint): void {
   selected.value = row

@@ -5,6 +5,8 @@
     <UContainer class="w-full flex-1 py-8">
       <slot />
     </UContainer>
+    <USeparator icon="i-lucide-school" type="dashed" class="h-px" />
+
     <SiteFooter />
   </div>
 </template>
