@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import type { NavigationMenuItem } from '@nuxt/ui'
 import { useSiteStore } from '~/stores/site'
 
 const site = useSiteStore()
@@ -42,73 +41,66 @@ const fallbackSarana = [
   { slug: 'syarat-penghapusan-sarpras', title: 'Syarat Penghapusan Sarana Prasarana' },
 ]
 
-const sopUrl = computed(() => site.settings.sop_drive_url.trim())
-
-const items = computed<NavigationMenuItem[][]>(() => [
-  [
-    {
-      label: 'Statistik Dapodik',
-      children: [
-        { label: 'Jumlah Satuan Pendidikan', to: '/statistik/satuan-pendidikan' },
-        { label: 'Jumlah Peserta Didik', to: '/statistik/peserta-didik' },
-        { label: 'Jumlah Guru', to: '/statistik/guru' },
-        { label: 'Jumlah Tendik', to: '/statistik/tendik' },
-      ],
-    },
-    {
-      label: 'Informasi',
-      children: [
-        { label: 'Surat Informasi Dapodik', to: '/informasi/surat' },
-        { label: 'Link Informasi Dapodik', to: '/informasi/link' },
-        { label: 'Breaking News', to: '/informasi/berita' },
-      ],
-    },
-    {
-      label: 'PTK',
-      children: (ptkPages.value.length ? ptkPages.value : fallbackPtk).map((p) => ({
-        label: p.title,
-        to: `/ptk/${p.slug}`,
-      })),
-    },
-    {
-      label: 'Peserta Didik',
-      children: (pdPages.value.length ? pdPages.value : fallbackPd).map((p) => ({
-        label: p.title,
-        to: `/peserta-didik/${p.slug}`,
-      })),
-    },
-    {
-      label: 'Sarana Prasarana',
-      children: (saranaPages.value.length ? saranaPages.value : fallbackSarana).map((p) => ({
-        label: p.title,
-        to: `/sarana/${p.slug}`,
-      })),
-    },
-    {
-      label: 'SOP Pelayanan Dapodik',
-      children: sopUrl.value
-        ? [{ label: 'SOP Pelayanan Dapodik (Google Drive)', to: sopUrl.value, target: '_blank' }]
-        : [{ label: 'Link SOP belum diatur admin', disabled: true }],
-    },
-    {
-      label: 'Pengaduan',
-      to: '/pengaduan',
-      active: route.path.startsWith('/pengaduan'),
-    },
-  ],
+const items = computed(() => [
+  {
+    label: 'Statistik Dapodik',
+    children: [
+      { label: 'Jumlah Satuan Pendidikan', to: '/statistik/satuan-pendidikan' },
+      { label: 'Jumlah Peserta Didik', to: '/statistik/peserta-didik' },
+      { label: 'Jumlah Guru', to: '/statistik/guru' },
+      { label: 'Jumlah Tendik', to: '/statistik/tendik' },
+    ],
+  },
+  {
+    label: 'Informasi',
+    children: [
+      { label: 'Surat Informasi Dapodik', to: '/informasi/surat' },
+      { label: 'Link Informasi Dapodik', to: '/informasi/link' },
+      { label: 'Breaking News', to: '/informasi/berita' },
+      { label: 'FAQ', to: '/faq' },
+    ],
+  },
+  {
+    label: 'PTK',
+    children: (ptkPages.value.length ? ptkPages.value : fallbackPtk).map((p) => ({
+      label: p.title,
+      to: `/ptk/${p.slug}`,
+    })),
+  },
+  {
+    label: 'Peserta Didik',
+    children: (pdPages.value.length ? pdPages.value : fallbackPd).map((p) => ({
+      label: p.title,
+      to: `/peserta-didik/${p.slug}`,
+    })),
+  },
+  {
+    label: 'Sarana Prasarana',
+    children: (saranaPages.value.length ? saranaPages.value : fallbackSarana).map((p) => ({
+      label: p.title,
+      to: `/sarana/${p.slug}`,
+    })),
+  },
+  {
+    label: 'SOP Pelayanan Dapodik',
+    to: '/sop',
+    active: route.path.startsWith('/sop'),
+  },
+  {
+    label: 'Pengaduan',
+    to: '/pengaduan',
+    active: route.path.startsWith('/pengaduan'),
+  },
 ])
 </script>
 
 <template>
   <UHeader :title="site.settings.site_name">
     <template #title>
-      <SiteLogo />
-      <span class="text-sm font-bold tracking-tight sm:text-base">
-        {{ site.settings.site_name }}
-      </span>
+      <img src="/logo-nav.png" alt="Logo" class="h-6 w-auto">
     </template>
 
-    <UNavigationMenu :items="items" />
+    <UNavigationMenu arrow content-orientation="vertical" :items="items" class="w-full justify-center" :ui="{ content: 'w-auto min-w-60', childLinkLabel: 'whitespace-normal break-words' }" />
 
     <template #right>
       <UColorModeButton />

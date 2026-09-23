@@ -39,9 +39,19 @@ function getItems(state: 'collapsed' | 'expanded') {
       to: '/admin/surat'
     },
     {
+      label: 'SOP',
+      icon: 'i-lucide-clipboard-list',
+      to: '/admin/sop'
+    },
+    {
       label: 'Link Informasi',
       icon: 'i-lucide-link',
       to: '/admin/link'
+    },
+    {
+      label: 'FAQ',
+      icon: 'i-lucide-circle-help',
+      to: '/admin/faq'
     },
     {
       label: 'Breaking News',

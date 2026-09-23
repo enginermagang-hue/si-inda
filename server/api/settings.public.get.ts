@@ -1,7 +1,7 @@
 import { useDb } from '../utils/db'
 
 // GET /api/settings/public — hanya key yang aman untuk publik
-const PUBLIC_SETTINGS = ['site_name', 'site_tagline', 'sop_drive_url', 'contact_wa', 'footer_text']
+const PUBLIC_SETTINGS = ['site_name', 'site_tagline', 'contact_wa', 'footer_text']
 
 export default defineEventHandler(async () => {
   const rows: Array<{ key: string; value: string }> = await useDb().query.settings.findMany()

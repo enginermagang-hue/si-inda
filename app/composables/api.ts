@@ -85,12 +85,41 @@ export interface Letter {
   createdAt: string
 }
 
+export interface Sop {
+  id: number
+  judul: string
+  deskripsi: string
+  filePath: string | null
+  dropboxPath: string | null
+  isPublished: number
+  createdAt: string
+  updatedAt: string
+}
+
 export interface InfoLink {
   id: number
   title: string
   url: string
   sortOrder: number
   isPublished: number
+}
+
+export interface Faq {
+  id: number
+  question: string
+  answer: string
+  category: string
+  sortOrder: number
+  isPublished: number
+  viewCount: number
+  createdAt: string
+  updatedAt: string
+}
+
+export interface FaqPopular {
+  popularFaqs: Faq[]
+  popularKeywords: Array<{ keyword: string; count: number }>
+  categories: string[]
 }
 
 export interface NewsItem {
@@ -114,10 +143,18 @@ export interface Complaint {
   updatedAt: string
 }
 
+export interface ComplaintStatus {
+  id: number
+  kategori: string
+  status: 'baru' | 'diproses' | 'selesai'
+  adminNote: string | null
+  createdAt: string
+  updatedAt: string
+}
+
 export interface PublicSettings {
   site_name: string
   site_tagline: string
-  sop_drive_url: string
   contact_wa: string
   footer_text: string
 }

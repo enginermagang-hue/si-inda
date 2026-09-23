@@ -85,6 +85,41 @@ export const breakingNews = sqliteTable('breaking_news', {
   expiresAt: text('expires_at'),
 })
 
+/** FAQ (tanya-jawab publik, jawaban rich-text HTML). */
+export const faqs = sqliteTable('faqs', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  question: text('question').notNull(),
+  answer: text('answer').notNull().default(''),
+  category: text('category').notNull().default('Umum'),
+  sortOrder: integer('sort_order').notNull().default(0),
+  isPublished: integer('is_published').notNull().default(1),
+  viewCount: integer('view_count').notNull().default(0),
+  createdAt: text('created_at').notNull().$defaultFn(now),
+  updatedAt: text('updated_at').notNull().$defaultFn(now),
+})
+
+/** SOP Pelayanan Dapodik (gambar, diunggah ke Dropbox folder `sop`). */
+export const sops = sqliteTable('sops', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  judul: text('judul').notNull(),
+  deskripsi: text('deskripsi').notNull().default(''),
+  /** URL publik gambar: path relatif lokal (uploads/...) atau URL Dropbox. */
+  filePath: text('file_path'),
+  /** Path internal Dropbox untuk hapus (NULL untuk driver lokal). */
+  dropboxPath: text('dropbox_path'),
+  isPublished: integer('is_published').notNull().default(1),
+  createdAt: text('created_at').notNull().$defaultFn(now),
+  updatedAt: text('updated_at').notNull().$defaultFn(now),
+})
+
+/** Log pencarian/klik FAQ untuk "paling ditanya/cari". */
+export const faqSearchLogs = sqliteTable('faq_search_logs', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  keyword: text('keyword').notNull(),
+  faqId: integer('faq_id'),
+  createdAt: text('created_at').notNull().$defaultFn(now),
+})
+
 /**
  * Pengaduan / penyampaian kendala Dapodik dari pengunjung.
  * status: 'baru' | 'diproses' | 'selesai'

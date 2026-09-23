@@ -5,7 +5,7 @@ import { useSiteStore } from '~/stores/site'
 definePageMeta({ layout: 'admin', middleware: 'admin' })
 
 const site = useSiteStore()
-const form = ref({ site_name: '', site_tagline: '', sop_drive_url: '', contact_wa: '', footer_text: '' })
+const form = ref({ site_name: '', site_tagline: '', contact_wa: '', footer_text: '' })
 const loading = ref(true)
 const error = ref('')
 const success = ref('')
@@ -30,16 +30,11 @@ onMounted(load)
 async function save(): Promise<void> {
   error.value = ''
   success.value = ''
-  if (form.value.sop_drive_url.trim() && !/^https?:\/\//i.test(form.value.sop_drive_url.trim())) {
-    error.value = 'Link SOP Google Drive harus diawali http(s):// atau dikosongkan.'
-    return
-  }
   saving.value = true
   try {
     await api.put('/admin/settings', {
       site_name: form.value.site_name,
       site_tagline: form.value.site_tagline,
-      sop_drive_url: form.value.sop_drive_url.trim(),
       contact_wa: form.value.contact_wa,
       footer_text: form.value.footer_text,
     })
@@ -57,7 +52,7 @@ async function save(): Promise<void> {
 <template>
   <div class="max-w-2xl">
     <h1 class="text-2xl font-bold tracking-tight">Pengaturan Situs</h1>
-    <p class="mt-1 text-sm text-muted">Nama situs, link SOP Google Drive, kontak, dan teks footer.</p>
+    <p class="mt-1 text-sm text-muted">Nama situs, kontak, dan teks footer.</p>
 
     <p v-if="loading" class="mt-4 text-sm text-muted">Memuat…</p>
     <UCard v-else class="mt-4">
@@ -68,14 +63,6 @@ async function save(): Promise<void> {
         <UFormField label="Tagline">
           <UInput v-model="form.site_tagline" class="w-full" />
         </UFormField>
-        <UCard variant="soft">
-          <UFormField label="Link SOP Pelayanan Dapodik (Google Drive)">
-            <UInput v-model="form.sop_drive_url" type="url" placeholder="https://drive.google.com/drive/folders/…" class="w-full" />
-          </UFormField>
-          <p class="mt-1 text-xs text-muted">
-            Tempel link folder/file Drive (sharing "Anyone with the link"). Menu SOP membuka link ini di tab baru. Kosongkan untuk menonaktifkan menu.
-          </p>
-        </UCard>
         <UFormField label="Kontak WhatsApp (angka saja, mis. 62812…)">
           <UInput v-model="form.contact_wa" class="w-full" />
         </UFormField>

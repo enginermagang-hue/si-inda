@@ -15,6 +15,20 @@
       "when": 1789971831967,
       "tag": "0001_sudden_lorna_dane",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1790141402393,
+      "tag": "0002_faq",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1790143513949,
+      "tag": "0003_sop",
+      "breakpoints": true
     }
   ]
 }

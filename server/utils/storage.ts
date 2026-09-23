@@ -23,12 +23,15 @@ export function storageDriver(): 'local' | 'dropbox' {
 export const DROPBOX_FOLDERS = {
   SURAT: 'surat',
   SOP: 'sop',
+  GAMBAR: 'gambar',
 } as const
 
 export type DropboxFolderKey = keyof typeof DROPBOX_FOLDERS
 
 export const UPLOAD_DIR = join(process.cwd(), 'public', 'uploads')
 const MAX_PDF_BYTES = 10 * 1024 * 1024 // 10 MB
+const MAX_IMAGE_BYTES = 2 * 1024 * 1024 // 2 MB
+const ALLOWED_IMAGE_EXTS = ['.png', '.jpg', '.jpeg', '.gif', '.webp']
 
 export interface StoredFile {
   /** URL publik untuk diunduh (path relatif lokal atau URL Dropbox). */
@@ -43,6 +46,12 @@ export interface PdfInput {
   type: string
 }
 
+export interface ImageInput {
+  bytes: Uint8Array
+  filename: string
+  type: string
+}
+
 /** Normalisasi value env: buang whitespace + tanda kutip pembungkus. */
 export function norm(v?: string): string {
   if (!v) return ''
@@ -52,6 +61,16 @@ export function norm(v?: string): string {
 function assertPdf(size: number, type: string): void {
   if (type !== 'application/pdf') throw createError({ statusCode: 400, message: 'File harus berformat PDF.' })
   if (size > MAX_PDF_BYTES) throw createError({ statusCode: 400, message: 'Ukuran PDF maksimal 10 MB.' })
+}
+
+function assertImage(size: number, type: string, filename: string): string {
+  if (!type.startsWith('image/')) throw createError({ statusCode: 400, message: 'File harus berformat gambar.' })
+  const ext = extname(filename).toLowerCase()
+  if (!ALLOWED_IMAGE_EXTS.includes(ext)) {
+    throw createError({ statusCode: 400, message: 'Format gambar harus PNG, JPG, GIF, atau WebP.' })
+  }
+  if (size > MAX_IMAGE_BYTES) throw createError({ statusCode: 400, message: 'Ukuran gambar maksimal 2 MB.' })
+  return ext
 }
 
 /* ---------- Driver lokal ---------- */
@@ -75,6 +94,14 @@ function deleteLocal(relativePath: string | null | undefined): void {
   if (!safe) return
   const full = join(UPLOAD_DIR, safe)
   if (existsSync(full)) unlinkSync(full)
+}
+
+async function saveLocalImage(input: ImageInput, prefix: string): Promise<StoredFile> {
+  const ext = assertImage(input.bytes.length, input.type, input.filename)
+  const stored = `${prefix}-${randomUUID()}${ext}`
+  ensureUploadDir()
+  writeFileSync(join(UPLOAD_DIR, stored), new Uint8Array(input.bytes))
+  return { url: `uploads/${stored}`, path: `uploads/${stored}` }
 }
 
 /* ---------- Driver Dropbox ---------- */
@@ -267,6 +294,38 @@ async function deleteDropbox(path: string | null | undefined): Promise<void> {
   await dropboxRpc('files/delete_v2', { path })
 }
 
+async function saveDropboxImage(input: ImageInput, prefix: string, folderKey: DropboxFolderKey): Promise<StoredFile> {
+  const ext = assertImage(input.bytes.length, input.type, input.filename)
+  const token = await dropboxAccessToken()
+  const filename = `${prefix}-${randomUUID()}${ext}`
+  const path = `${dropboxFolderPath(folderKey)}/${filename}`
+  const upload = await fetch('https://content.dropboxapi.com/2/files/upload', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/octet-stream',
+      'Dropbox-API-Arg': JSON.stringify({ path, mode: 'add', autorename: true }),
+    },
+    body: new Uint8Array(input.bytes),
+  })
+  if (!upload.ok) {
+    const text = await upload.text().catch(() => '')
+    const tag = extractDropboxTag(text)
+    console.error('[Dropbox] upload gambar gagal', { status: upload.status, tag, body: text.slice(0, 300) })
+    throw createError(mapDropboxError(upload.status, tag, 'write', text.slice(0, 200)))
+  }
+  const uploaded = (await upload.json()) as { path_lower?: string; path_display?: string }
+  const finalPath = (uploaded.path_lower ?? uploaded.path_display ?? path).toLowerCase()
+  const shared = (await dropboxRpc('sharing/create_shared_link_with_settings', {
+    path: finalPath,
+    settings: { requested_visibility: 'public' },
+  })) as { url?: string }
+  if (!shared.url) throw createError({ statusCode: 502, message: 'Gagal membuat link sharing Dropbox.' })
+  // ?dl=0 = halaman preview → ?raw=1 = stream langsung (cocok untuk <img src>).
+  const url = shared.url.replace('dl=0', 'raw=1')
+  return { url, path: finalPath }
+}
+
 /* ---------- API umum ---------- */
 
 export async function savePdfUpload(
@@ -276,6 +335,15 @@ export async function savePdfUpload(
 ): Promise<StoredFile> {
   if (storageDriver() === 'dropbox') return saveDropbox(input, prefix, folderKey)
   return saveLocal(input, prefix)
+}
+
+export async function saveImageUpload(
+  input: ImageInput,
+  prefix = 'gambar',
+  folderKey: DropboxFolderKey = 'GAMBAR',
+): Promise<StoredFile> {
+  if (storageDriver() === 'dropbox') return saveDropboxImage(input, prefix, folderKey)
+  return saveLocalImage(input, prefix)
 }
 
 export async function deleteStoredFile(

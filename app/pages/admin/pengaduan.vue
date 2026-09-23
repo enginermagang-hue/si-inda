@@ -83,7 +83,7 @@ function fmt(iso: string): string {
     <div class="flex flex-wrap items-center justify-between gap-3">
       <div>
         <h1 class="text-2xl font-bold tracking-tight">Pengaduan Masuk</h1>
-        <p class="mt-1 text-sm text-muted">Ubah status menjadi diproses/selesai. Catatan admin bersifat internal.</p>
+        <p class="mt-1 text-sm text-muted">Ubah status menjadi diproses/selesai. Catatan admin ditampilkan ke pengunjung di Lacak status.</p>
       </div>
       <USelect v-model="filter" :items="statusItems" value-key="value" label-key="label" class="w-44" />
     </div>
@@ -136,7 +136,7 @@ function fmt(iso: string): string {
               class="w-full"
             />
           </UFormField>
-          <UFormField label="Catatan admin (internal)">
+          <UFormField label="Catatan admin (ditampilkan ke pengunjung)">
             <UTextarea v-model="adminNote" :rows="3" class="w-full" />
           </UFormField>
           <UButton :loading="saving" @click="save">Simpan perubahan</UButton>

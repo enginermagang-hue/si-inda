@@ -1,3 +1,4 @@
+import 'dotenv/config'
 import { createClient } from '@libsql/client'
 import { drizzle } from 'drizzle-orm/libsql'
 import * as schema from '../server/db/schema'
@@ -76,7 +77,6 @@ const seedPages = [
 const seedSettings: Array<[string, string]> = [
   ['site_name', 'SIINDAH — Layanan Dapodik'],
   ['site_tagline', 'Microsite informasi dan pelayanan pendataan Dapodik'],
-  ['sop_drive_url', ''],
   ['contact_wa', ''],
   ['footer_text', 'Dinas Pendidikan — Bidang Pendataan Dapodik'],
 ]

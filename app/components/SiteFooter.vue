@@ -15,6 +15,7 @@ const items: NavigationMenuItem[] = [
   { label: 'Statistik Dapodik', to: '/statistik/satuan-pendidikan' },
   { label: 'Layanan PTK', to: '/ptk/syarat-pengajuan-nuptk' },
   { label: 'Pengaduan', to: '/pengaduan' },
+  { label: 'FAQ', to: '/faq' },
 ]
 </script>
 

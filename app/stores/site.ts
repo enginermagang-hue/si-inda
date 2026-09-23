@@ -4,7 +4,6 @@ export const useSiteStore = defineStore('site', () => {
   const settings = ref<PublicSettings>({
     site_name: 'SIINDAH — Layanan Dapodik',
     site_tagline: 'Microsite informasi dan pelayanan pendataan Dapodik',
-    sop_drive_url: '',
     contact_wa: '',
     footer_text: '',
   })

@@ -12,11 +12,11 @@ import { TextAlign } from '@tiptap/extension-text-align'
 import { upperFirst } from 'scule'
 import { CodeBlockShiki } from 'tiptap-extension-code-block-shiki'
 import { mapEditorItems } from '@nuxt/ui/utils/editor'
-import { api, type ContentPage } from '~/composables/api'
 import { ImageUpload } from '~/components/editor/EditorImageUploadExtension'
 import EditorLinkPopover from '~/components/editor/EditorLinkPopover.vue'
 
-definePageMeta({ layout: 'admin', middleware: 'admin' })
+/** Editor rich-text HTML bersama (dipakai Halaman Syarat & FAQ admin). */
+const model = defineModel<string>({ default: '' })
 
 const customHandlers = {
   imageUpload: {
@@ -435,163 +435,32 @@ const suggestionItems = [[{
 
 const emojiItems: EditorEmojiMenuItem[] = gitHubEmojis.filter(emoji => !emoji.name.startsWith('regional_indicator_'))
 
-const rows = ref<ContentPage[]>([])
-const loading = ref(true)
-const error = ref('')
-const editing = ref<(Partial<ContentPage> & { id?: number }) | null>(null)
-const showModal = ref(false)
-const saving = ref(false)
-
-const groups = [
-  { value: 'ptk', label: 'PTK' },
-  { value: 'peserta_didik', label: 'Peserta Didik' },
-  { value: 'sarana', label: 'Sarana Prasarana' },
-]
-
-async function load(): Promise<void> {
-  loading.value = true
-  try {
-    const res = await api.get<{ data: ContentPage[] }>('/admin/pages')
-    rows.value = res.data
-  } catch (e) {
-    error.value = e instanceof Error ? e.message : 'Gagal memuat.'
-  } finally {
-    loading.value = false
-  }
-}
-
-onMounted(load)
-
-function groupLabel(g: string): string {
-  return groups.find((x) => x.value === g)?.label ?? g
-}
-
-function startAdd(): void {
-  editing.value = { slug: '', menuGroup: 'ptk', title: '', body: '', isPublished: 1, sortOrder: 0 }
-  showModal.value = true
-}
-
-function startEdit(row: ContentPage): void {
-  editing.value = { ...row }
-  showModal.value = true
-}
-
-async function save(): Promise<void> {
-  if (!editing.value) return
-  error.value = ''
-  const f = editing.value
-  if (!f.title?.trim()) {
-    error.value = 'Judul wajib diisi.'
-    return
-  }
-  saving.value = true
-  try {
-    if (f.id) {
-      await api.put(`/admin/pages/${f.id}`, {
-        title: f.title.trim(),
-        menuGroup: f.menuGroup,
-        body: f.body ?? '',
-        isPublished: f.isPublished ? 1 : 0,
-        sortOrder: Number(f.sortOrder) || 0,
-      })
-    } else {
-      if (!f.slug?.trim()) {
-        error.value = 'Slug wajib diisi untuk halaman baru.'
-        saving.value = false
-        return
-      }
-      await api.post('/admin/pages', {
-        slug: f.slug.trim(),
-        title: f.title.trim(),
-        menuGroup: f.menuGroup,
-        body: f.body ?? '',
-        isPublished: f.isPublished ? 1 : 0,
-        sortOrder: Number(f.sortOrder) || 0,
-      })
-    }
-    editing.value = null
-    showModal.value = false
-    await load()
-  } catch (e) {
-    error.value = e instanceof Error ? e.message : 'Gagal menyimpan.'
-  } finally {
-    saving.value = false
-  }
-}
-
-async function remove(id: number): Promise<void> {
-  if (!confirm('Hapus halaman ini? Pengunjung akan mendapat 404.')) return
-  await api.del(`/admin/pages/${id}`)
-  await load()
-}
-
-const grouped = computed(() => {
-  const out: Record<string, ContentPage[]> = {}
-  for (const r of rows.value) {
-    const list = out[r.menuGroup]
-    if (list) list.push(r)
-    else out[r.menuGroup] = [r]
-  }
-  return out
-})
 </script>
 
 <template>
-  <div>
-    <div class="flex items-center justify-between">
-      <div>
-        <h1 class="text-2xl font-bold tracking-tight">Halaman Syarat Layanan</h1>
-        <p class="mt-1 text-sm text-muted">Isi body mendukung HTML sederhana. Perubahan langsung tampil di situs.</p>
-      </div>
-      <UButton icon="i-lucide-plus" @click="startAdd">Tambah</UButton>
-    </div>
-
-    <UAlert v-if="error" color="error" variant="soft" :title="error" class="mt-4" />
-
-    <UModal v-model:open="showModal" title="Halaman Syarat Layanan" :ui="{ content: 'w-[calc(100vw-2rem)] max-w-3xl' }" @close="editing = null">
-      <template #body>
-        <div v-if="editing">
-        <div class="grid gap-3 sm:grid-cols-2">
-          <UFormField v-if="!editing.id" label="Slug (tanpa spasi)">
-            <UInput v-model="editing.slug" class="w-full" />
-          </UFormField>
-          <UFormField label="Judul">
-            <UInput v-model="editing.title" class="w-full" />
-          </UFormField>
-          <UFormField label="Grup menu">
-            <USelect v-model="editing.menuGroup" :items="groups" value-key="value" label-key="label" class="w-full" />
-          </UFormField>
-          <UFormField label="Urutan">
-            <UInput v-model.number="editing.sortOrder" type="number" class="w-full" />
-          </UFormField>
-          <div class="flex items-end pb-2">
-            <UCheckbox v-model="editing.isPublished" :true-value="1" :false-value="0" label="Publikasikan" />
-          </div>
-        </div>
-        <UFormField label="Isi (HTML)" class="mt-3">
-          <UEditor
-            v-slot="{ editor, handlers }"
-            v-model="editing.body"
-            content-type="html"
-            :extensions="[
-              Emoji,
-              TextAlign.configure({ types: ['heading', 'paragraph'] }),
-              ImageUpload,
-              CodeBlockShiki.configure({
-                defaultTheme: 'material-theme',
-                themes: {
-                  light: 'material-theme-lighter',
-                  dark: 'material-theme-palenight'
-                }
-              })
-            ]"
-            :handlers="customHandlers"
-            :mention="false"
-            :starter-kit="{ codeBlock: false }"
-            placeholder="Tulis konten di sini... Ketik '/' untuk perintah..."
-            :ui="{ base: 'p-4' }"
-            class="w-full min-h-40 rounded-lg border border-default"
-          >
+  <UEditor
+    v-slot="{ editor, handlers }"
+    v-model="model"
+    content-type="html"
+    :extensions="[
+      Emoji,
+      TextAlign.configure({ types: ['heading', 'paragraph'] }),
+      ImageUpload,
+      CodeBlockShiki.configure({
+        defaultTheme: 'material-theme',
+        themes: {
+          light: 'material-theme-lighter',
+          dark: 'material-theme-palenight'
+        }
+      })
+    ]"
+    :handlers="customHandlers"
+    :mention="false"
+    :starter-kit="{ codeBlock: false }"
+    placeholder="Tulis konten di sini... Ketik '/' untuk perintah..."
+    :ui="{ base: 'p-4' }"
+    class="w-full min-h-40 rounded-lg border border-default"
+  >
             <UEditorToolbar :editor="editor" :items="fixedToolbarItems" class="border-b border-muted sticky top-0 inset-x-0 px-2 py-2 z-50 bg-default overflow-x-auto">
               <template #link>
                 <EditorLinkPopover :editor="editor" auto-open />
@@ -662,43 +531,7 @@ const grouped = computed(() => {
                 />
               </UDropdownMenu>
             </UEditorDragHandle>
-          </UEditor>
-        </UFormField>
-        </div>
-      </template>
-      <template #footer="{ close }">
-        <div class="flex gap-2">
-          <UButton :loading="saving" @click="save">Simpan</UButton>
-          <UButton variant="ghost" color="neutral" @click="close">Batal</UButton>
-        </div>
-      </template>
-    </UModal>
-
-    <p v-if="loading" class="mt-4 text-sm text-muted">Memuat…</p>
-    <div v-else class="mt-4 space-y-6">
-      <div v-for="(list, group) in grouped" :key="group">
-        <h2 class="font-semibold">{{ groupLabel(group) }}</h2>
-        <div class="mt-2 space-y-2">
-          <UCard v-for="row in list" :key="row.id">
-            <div class="flex items-center justify-between gap-3">
-              <div>
-                <p class="font-medium">{{ row.title }}</p>
-                <p class="text-xs text-muted">
-                  /{{ row.slug }} •
-                  <span v-if="row.isPublished" class="text-success">Publish</span>
-                  <span v-else>Draf</span>
-                </p>
-              </div>
-              <div class="flex shrink-0 gap-1">
-                <UButton variant="link" color="primary" @click="startEdit(row)">Ubah</UButton>
-                <UButton variant="link" color="error" @click="remove(row.id)">Hapus</UButton>
-              </div>
-            </div>
-          </UCard>
-        </div>
-      </div>
-    </div>
-  </div>
+  </UEditor>
 </template>
 
 <style>

@@ -1,7 +1,7 @@
 # SIINDAH — Microsite Layanan Dapodik (Nuxt 4 + Nuxt UI)
 
 Microsite informasi + pelayanan pendataan Dapodik: Statistik, Informasi (surat/link/berita),
-PTK, Peserta Didik, Sarana Prasarana, SOP (link Google Drive), dan Pengaduan.
+PTK, Peserta Didik, Sarana Prasarana, SOP (galeri gambar), dan Pengaduan.
 Pengunjung tanpa akun; hanya admin yang login untuk mengelola konten.
 
 > Riwayat aplikasi sebelumnya (Vue SPA + Hono) tersimpan di branch
@@ -41,11 +41,11 @@ Login admin: `http://localhost:3000/admin/login`
 | `npm run test:unit` | vitest |
 | `npm run test:e2e` | playwright (Chromium) |
 
-## Struktur database (8 tabel, `server/db/schema.ts`)
+## Struktur database (9 tabel, `server/db/schema.ts`)
 
-`admins`, `settings` (termasuk `sop_drive_url`), `content_pages` (7 halaman Syarat…),
+`admins`, `settings`, `content_pages` (7 halaman Syarat…),
 `statistics` (satuan_pendidikan, peserta_didik, guru, tendik — tanpa PTK),
-`letters` (+ `dropbox_path`), `info_links`, `breaking_news`, `complaints`.
+`letters` (+ `dropbox_path`), `sops` (gambar SOP, + `dropbox_path`), `info_links`, `breaking_news`, `complaints`.
 
 ## Deploy ke Vercel
 
