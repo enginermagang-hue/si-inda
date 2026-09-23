@@ -2,7 +2,7 @@ import 'dotenv/config'
 import { createClient } from '@libsql/client'
 import { drizzle } from 'drizzle-orm/libsql'
 import * as schema from '../server/db/schema'
-import { admins, breakingNews, contentPages, settings, statistics } from '../server/db/schema'
+import { admins, breakingNews, breakingNewsImages, contentPages, settings, statistics } from '../server/db/schema'
 import { hashPassword } from '../server/utils/password'
 
 const tursoUrl = process.env.NUXT_TURSO_URL?.trim() || process.env.TURSO_URL?.trim()
@@ -122,10 +122,20 @@ async function main(): Promise<void> {
   }
 
   if ((await db.query.breakingNews.findMany()).length === 0) {
-    await db.insert(breakingNews).values({
-      title: 'Selamat datang di microsite layanan Dapodik',
-      body: 'Informasi, syarat layanan, statistik, dan pengaduan kini terpusat di satu tempat.',
-      isActive: 1,
+    const [news] = await db
+      .insert(breakingNews)
+      .values({
+        title: 'Selamat datang di microsite layanan Dapodik',
+        body: 'Informasi, syarat layanan, statistik, dan pengaduan kini terpusat di satu tempat.',
+        isActive: 1,
+      })
+      .returning()
+    await db.insert(breakingNewsImages).values({
+      newsId: news.id,
+      filePath: null,
+      dropboxPath: null,
+      description: 'Dokumentasi layanan Dapodik',
+      sortOrder: 0,
     })
     console.log('Breaking news sambutan di-seed')
   } else {

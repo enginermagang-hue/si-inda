@@ -122,6 +122,16 @@ export interface FaqPopular {
   categories: string[]
 }
 
+export interface NewsImage {
+  id: number
+  newsId: number
+  filePath: string | null
+  dropboxPath: string | null
+  description: string | null
+  sortOrder: number
+  createdAt: string
+}
+
 export interface NewsItem {
   id: number
   title: string
@@ -129,6 +139,7 @@ export interface NewsItem {
   isActive: number
   publishedAt: string
   expiresAt: string | null
+  images: NewsImage[]
 }
 
 export interface Complaint {

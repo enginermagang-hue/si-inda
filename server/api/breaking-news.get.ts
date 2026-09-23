@@ -1,6 +1,6 @@
-import { desc, eq } from 'drizzle-orm'
+import { desc, eq, asc } from 'drizzle-orm'
 import { useDb } from '../utils/db'
-import { breakingNews } from '../db/schema'
+import { breakingNews, breakingNewsImages } from '../db/schema'
 
 // GET /api/breaking-news — yang aktif & belum kedaluwarsa
 export default defineEventHandler(async () => {
@@ -9,5 +9,17 @@ export default defineEventHandler(async () => {
     where: eq(breakingNews.isActive, 1),
     orderBy: [desc(breakingNews.publishedAt)],
   })
-  return { data: rows.filter((r) => !r.expiresAt || r.expiresAt >= now) }
+  const active = rows.filter((r) => !r.expiresAt || r.expiresAt >= now)
+
+  const result = await Promise.all(
+    active.map(async (row) => {
+      const images = await useDb()
+        .select()
+        .from(breakingNewsImages)
+        .where(eq(breakingNewsImages.newsId, row.id))
+        .orderBy(asc(breakingNewsImages.sortOrder))
+      return { ...row, images }
+    }),
+  )
+  return { data: result }
 })

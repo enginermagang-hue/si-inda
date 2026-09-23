@@ -85,6 +85,17 @@ export const breakingNews = sqliteTable('breaking_news', {
   expiresAt: text('expires_at'),
 })
 
+/** Gambar Breaking News (multi-gambar dengan deskripsi per berita). */
+export const breakingNewsImages = sqliteTable('breaking_news_images', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  newsId: integer('news_id').notNull().references(() => breakingNews.id, { onDelete: 'cascade' }),
+  filePath: text('file_path'),
+  dropboxPath: text('dropbox_path'),
+  description: text('description'),
+  sortOrder: integer('sort_order').notNull().default(0),
+  createdAt: text('created_at').notNull().$defaultFn(now),
+})
+
 /** FAQ (tanya-jawab publik, jawaban rich-text HTML). */
 export const faqs = sqliteTable('faqs', {
   id: integer('id').primaryKey({ autoIncrement: true }),
