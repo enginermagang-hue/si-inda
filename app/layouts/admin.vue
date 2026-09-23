@@ -7,12 +7,26 @@ const open = ref(true)
 const auth = useAuthStore()
 const site = useSiteStore()
 const colorMode = useColorMode()
+const route = useRoute()
+
+// Auto-close sidebar on navigation, mobile only (desktop uses icon-collapse)
+watch(() => route.path, () => {
+  if (typeof window !== 'undefined' && window.innerWidth < 1024) {
+    open.value = false
+  }
+})
 
 await site.load()
 
 async function logout(): Promise<void> {
   await auth.logout()
   await navigateTo('/admin/login')
+}
+
+function onMenuClick(): void {
+  if (typeof window !== 'undefined' && window.innerWidth < 1024) {
+    open.value = false
+  }
 }
 
 function getItems(state: 'collapsed' | 'expanded') {
@@ -185,6 +199,7 @@ const userItems = computed<DropdownMenuItem[][]>(() => [
           :items="getItems(state)"
           orientation="vertical"
           :ui="{ link: 'p-1.5 overflow-hidden' }"
+          @click="onMenuClick"
         />
       </template>
 
