@@ -71,25 +71,16 @@ async function remove(id: number): Promise<void> {
   await api.del(`/admin/statistics/${id}`)
   await load()
 }
-
-const columns = [
-  { accessorKey: 'category', header: 'Kategori' },
-  { accessorKey: 'label', header: 'Label / Jenjang' },
-  { accessorKey: 'period', header: 'Periode' },
-  { accessorKey: 'value', header: 'Nilai' },
-  { accessorKey: 'isCurrent', header: 'Status' },
-  { accessorKey: 'actions', header: 'Aksi' },
-]
 </script>
 
 <template>
   <div>
-    <div class="flex items-center justify-between">
+    <div class="flex flex-wrap items-center justify-between gap-3">
       <div>
         <h1 class="text-2xl font-bold tracking-tight">Kelola Statistik</h1>
         <p class="mt-1 text-sm text-muted">Input manual angka Dapodik per periode. Tanda "Aktif" tampil di publik.</p>
       </div>
-      <UButton icon="i-lucide-plus" @click="startAdd">Tambah</UButton>
+      <UButton icon="i-lucide-plus" class="shrink-0" @click="startAdd">Tambah</UButton>
     </div>
 
     <UAlert v-if="error" color="error" variant="soft" :title="error" class="mt-4" />
@@ -122,26 +113,23 @@ const columns = [
     </UCard>
 
     <p v-if="loading" class="mt-4 text-sm text-muted">Memuat…</p>
-    <UTable v-else :data="rows" :columns="columns" :loading="loading" class="mt-4">
-      <template #category-cell="{ row }">
-        {{ catLabel(row.original.category) }}
-      </template>
-      <template #label-cell="{ row }">
-        {{ row.original.label }}{{ row.original.jenjang ? ` (${row.original.jenjang})` : '' }}
-      </template>
-      <template #value-cell="{ row }">
-        <span class="font-bold">{{ row.original.value.toLocaleString('id-ID') }}</span>
-      </template>
-      <template #isCurrent-cell="{ row }">
-        <UBadge v-if="row.original.isCurrent" color="success" variant="soft">Aktif</UBadge>
-        <UBadge v-else color="neutral" variant="soft">Arsip</UBadge>
-      </template>
-      <template #actions-cell="{ row }">
-        <div class="flex gap-2">
-          <UButton variant="link" color="primary" @click="startEdit(row.original)">Ubah</UButton>
-          <UButton variant="link" color="error" @click="remove(row.original.id)">Hapus</UButton>
+    <div v-else class="mt-4 space-y-2">
+      <UCard v-for="row in rows" :key="row.id">
+        <div class="flex items-start justify-between gap-3">
+          <div class="min-w-0">
+            <p class="font-medium">{{ row.label }}{{ row.jenjang ? ` (${row.jenjang})` : '' }}</p>
+            <p class="mt-0.5 text-xs text-muted">
+              {{ catLabel(row.category) }} • {{ row.period }} • <span class="font-bold text-highlighted">{{ row.value.toLocaleString('id-ID') }}</span>
+            </p>
+          </div>
+          <UBadge v-if="row.isCurrent" color="success" variant="soft" class="shrink-0">Aktif</UBadge>
+          <UBadge v-else color="neutral" variant="soft" class="shrink-0">Arsip</UBadge>
         </div>
-      </template>
-    </UTable>
+        <div class="mt-2 flex gap-1 border-t border-default pt-2">
+          <UButton variant="link" color="primary" class="px-0" @click="startEdit(row)">Ubah</UButton>
+          <UButton variant="link" color="error" @click="remove(row.id)">Hapus</UButton>
+        </div>
+      </UCard>
+    </div>
   </div>
 </template>
