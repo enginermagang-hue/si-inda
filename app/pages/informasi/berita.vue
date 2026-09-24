@@ -110,6 +110,23 @@ function onPageChange(p: number): void {
     <div v-if="items.length" class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
       <UCard v-for="item in items" :key="item.id" class="flex flex-col overflow-hidden">
         <div class="flex-1 min-w-0">
+          <div
+            v-if="item.images[0]?.filePath"
+            class="mb-3 aspect-[3/2] w-full overflow-hidden rounded"
+          >
+            <img
+              :src="item.images[0].filePath"
+              :alt="item.images[0].description || item.title"
+              class="size-full object-cover"
+              loading="lazy"
+            >
+          </div>
+          <div
+            v-else
+            class="mb-3 flex aspect-[3/2] w-full items-center justify-center rounded bg-elevated/50"
+          >
+            <UIcon name="i-lucide-image" class="size-10 text-dimmed" />
+          </div>
           <p class="text-xs text-muted">{{ formatDate(item.publishedAt) }}</p>
           <h2 class="mt-1 font-semibold line-clamp-2">{{ item.title }}</h2>
           <p v-if="item.body" class="mt-1 text-sm text-muted line-clamp-3">{{ item.body }}</p>

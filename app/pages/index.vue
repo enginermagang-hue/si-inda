@@ -108,19 +108,12 @@ const services = [
         </UButton>
       </template>
       <div class="grid gap-4 md:grid-cols-3">
-        <UPageCard
-          v-for="item in news"
+        <BreakingNewsCard
+          v-for="(item, i) in news"
           :key="item.id"
-          :title="item.title"
-          :description="item.body ?? undefined"
-          variant="outline"
-        >
-          <template #footer>
-            <p class="text-xs text-muted">
-              {{ new Date(item.publishedAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) }}
-            </p>
-          </template>
-        </UPageCard>
+          :item="item"
+          :lazy="i > 0"
+        />
       </div>
     </UPageSection>
   </div>
