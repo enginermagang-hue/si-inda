@@ -28,6 +28,7 @@ __screenshots__/
 .idea
 *.suo
 *.sw?
+.kilo/
 
 *.tsbuildinfo
 .eslintcache

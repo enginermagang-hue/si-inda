@@ -7,6 +7,7 @@ const rows = ref<Complaint[]>([])
 const loading = ref(true)
 const error = ref('')
 const filter = ref('all')
+const search = ref('')
 const selected = ref<Complaint | null>(null)
 const newStatus = ref<Complaint['status']>('baru')
 const adminNote = ref('')
@@ -36,9 +37,28 @@ async function load(): Promise<void> {
 
 onMounted(load)
 
-const filtered = computed(() =>
-  filter.value === 'all' ? rows.value : rows.value.filter((r) => r.status === filter.value),
-)
+const filtered = computed(() => {
+  const q = search.value.trim().toLowerCase()
+  return rows.value.filter((r) => {
+    if (filter.value !== 'all' && r.status !== filter.value) return false
+    if (!q) return true
+    return (
+      String(r.id).includes(q) ||
+      r.nama.toLowerCase().includes(q) ||
+      r.kontak.toLowerCase().includes(q) ||
+      r.sekolah.toLowerCase().includes(q) ||
+      r.kategori.toLowerCase().includes(q) ||
+      r.isi.toLowerCase().includes(q)
+    )
+  })
+})
+
+const emptyTitle = computed(() => {
+  const q = search.value.trim()
+  if (q) return `Pencarian "${q}" tidak ditemukan`
+  if (filter.value !== 'all') return `Tidak ada pengaduan dengan status "${filter.value}"`
+  return 'Tidak ada pengaduan'
+})
 
 function open(row: Complaint): void {
   selected.value = row
@@ -80,13 +100,16 @@ function fmt(iso: string): string {
 
 <template>
   <div>
-    <div class="flex flex-wrap items-center justify-between gap-3">
-      <div>
-        <h1 class="text-2xl font-bold tracking-tight">Pengaduan Masuk</h1>
-        <p class="mt-1 text-sm text-muted">Ubah status menjadi diproses/selesai. Catatan admin ditampilkan ke pengunjung di Lacak status.</p>
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h1 class="text-2xl font-bold tracking-tight">Pengaduan Masuk</h1>
+          <p class="mt-1 text-sm text-muted">Ubah status menjadi diproses/selesai. Catatan admin ditampilkan ke pengunjung di Lacak status.</p>
+        </div>
+        <div class="flex flex-wrap items-center gap-2">
+          <UInput v-model="search" icon="i-lucide-search" placeholder="Cari pengaduan…" class="w-56" />
+          <USelect v-model="filter" :items="statusItems" value-key="value" label-key="label" class="w-44" />
+        </div>
       </div>
-      <USelect v-model="filter" :items="statusItems" value-key="value" label-key="label" class="w-44" />
-    </div>
 
     <UAlert v-if="error" color="error" variant="soft" :title="error" class="mt-4" />
 
@@ -98,7 +121,11 @@ function fmt(iso: string): string {
             v-for="row in filtered"
             :key="row.id"
             class="cursor-pointer"
-            :variant="selected?.id === row.id ? 'solid' : 'outline'"
+            variant="outline"
+            :class="[
+              'border-l-2 transition-colors',
+              selected?.id === row.id ? 'border-l-primary bg-primary/5' : 'border-l-transparent',
+            ]"
             @click="open(row)"
           >
             <div class="flex items-center justify-between gap-2">
@@ -108,7 +135,7 @@ function fmt(iso: string): string {
             <p class="mt-1 line-clamp-1 text-sm text-muted">{{ row.kategori }} • {{ row.isi }}</p>
             <p class="mt-1 text-xs text-muted">{{ fmt(row.createdAt) }}</p>
           </UCard>
-          <UEmpty v-if="!filtered.length" title="Tidak ada pengaduan" class="mt-2" />
+          <UEmpty v-if="!filtered.length" :title="emptyTitle" icon="i-lucide-search-x" class="mt-2" />
         </div>
       </div>
 
@@ -116,7 +143,7 @@ function fmt(iso: string): string {
         <div class="flex items-start justify-between gap-2">
           <div>
             <p class="font-bold">#{{ selected.id }} — {{ selected.nama }}</p>
-            <p class="text-sm text-muted">{{ selected.kontak }} • {{ selected.kategori }}</p>
+            <p class="text-sm text-muted">{{ selected.kontak }} • {{ selected.sekolah }} • {{ selected.kategori }}</p>
             <p class="text-xs text-muted">{{ fmt(selected.createdAt) }}</p>
           </div>
           <UButton variant="link" color="error" @click="remove(selected.id)">Hapus</UButton>

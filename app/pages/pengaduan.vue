@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { api, COMPLAINT_CATEGORIES, type ComplaintStatus } from '~/composables/api'
+import { api, ApiError, COMPLAINT_CATEGORIES, type ComplaintStatus } from '~/composables/api'
 
 const tab = ref<'buat' | 'lacak'>('buat')
 const nama = ref('')
 const kontak = ref('')
+const sekolah = ref('')
 const kategori = ref('Lainnya')
 const isi = ref('')
 const sending = ref(false)
@@ -14,6 +15,7 @@ const ticket = ref<number | null>(null)
 const trackId = ref('')
 const tracking = ref(false)
 const trackError = ref('')
+const trackNotFound = ref(false)
 const result = ref<ComplaintStatus | null>(null)
 
 const statusColor = (s: string): 'error' | 'warning' | 'success' =>
@@ -27,6 +29,7 @@ function fmt(iso: string): string {
 
 async function track(): Promise<void> {
   trackError.value = ''
+  trackNotFound.value = false
   result.value = null
   const id = Number(trackId.value.trim())
   if (!Number.isInteger(id) || id <= 0) {
@@ -38,7 +41,11 @@ async function track(): Promise<void> {
     const res = await api.get<{ data: ComplaintStatus }>(`/complaints/${id}`)
     result.value = res.data
   } catch (e) {
-    trackError.value = e instanceof Error ? e.message : 'Gagal melacak status.'
+    if (e instanceof ApiError && e.status === 404) {
+      trackNotFound.value = true
+    } else {
+      trackError.value = e instanceof Error ? e.message : 'Gagal melacak status.'
+    }
   } finally {
     tracking.value = false
   }
@@ -52,8 +59,8 @@ function trackTicket(id: number): void {
 
 async function submit(): Promise<void> {
   error.value = ''
-  if (!nama.value.trim() || !kontak.value.trim()) {
-    error.value = 'Nama dan kontak wajib diisi.'
+  if (!nama.value.trim() || !kontak.value.trim() || !sekolah.value.trim()) {
+    error.value = 'Nama, kontak, dan Nama Sekolah wajib diisi.'
     return
   }
   if (isi.value.trim().length < 10) {
@@ -63,8 +70,9 @@ async function submit(): Promise<void> {
   sending.value = true
   try {
     const res = await api.post<{ message: string; ticket: number }>('/complaints', {
-      nama: nama.value.trim(),
+       nama: nama.value.trim(),
       kontak: kontak.value.trim(),
+      sekolah: sekolah.value.trim(),
       kategori: kategori.value,
       isi: isi.value.trim(),
     })
@@ -82,6 +90,7 @@ function reset(): void {
   kontak.value = ''
   kategori.value = 'Lainnya'
   isi.value = ''
+  sekolah.value = ''
 }
 </script>
 
@@ -110,9 +119,16 @@ function reset(): void {
         </div>
       </UFormField>
       <UAlert v-if="trackError" color="error" variant="soft" :title="trackError" />
+      <UEmpty
+        v-else-if="trackNotFound"
+        icon="i-lucide-search-x"
+        :title="`Nomor tiket #${trackId.trim()} tidak ditemukan`"
+        description="Pastikan nomor tiket yang Anda masukkan sudah benar."
+      />
       <UCard v-if="result" variant="soft">
         <div class="flex items-center justify-between gap-2">
           <p class="font-bold">#{{ result.id }} — {{ result.kategori }}</p>
+          <p class="text-xs text-muted">{{ result.sekolah }}</p>
           <UBadge :color="statusColor(result.status)" variant="soft">{{ result.status }}</UBadge>
         </div>
         <ol class="mt-4 space-y-2">
@@ -147,12 +163,15 @@ function reset(): void {
       </div>
     </UCard>
 
-    <UForm v-else :state="{ nama, kontak, kategori, isi }" class="mt-6 space-y-4" @submit="submit">
+    <UForm v-else :state="{ nama, kontak, sekolah, kategori, isi }" class="mt-6 space-y-4" @submit="submit">
       <UFormField label="Nama lengkap" name="nama" required>
         <UInput v-model="nama" placeholder="Nama Anda" maxlength="100" class="w-full" />
       </UFormField>
       <UFormField label="Kontak (No. WA / email)" name="kontak" required>
         <UInput v-model="kontak" placeholder="08xx atau email" maxlength="100" class="w-full" />
+      </UFormField>
+      <UFormField label="Nama Sekolah" name="sekolah" required>
+        <UInput v-model="sekolah" placeholder="Nama sekolah / satuan pendidikan" maxlength="100" class="w-full" />
       </UFormField>
       <UFormField label="Kategori kendala" name="kategori">
         <USelect v-model="kategori" :items="COMPLAINT_CATEGORIES" class="w-full" />

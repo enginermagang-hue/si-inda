@@ -142,6 +142,7 @@ export const complaints = sqliteTable('complaints', {
   kontak: text('kontak').notNull(),
   kategori: text('kategori').notNull().default('Lainnya'),
   isi: text('isi').notNull(),
+  sekolah: text('sekolah').notNull().default(''),
   status: text('status').notNull().default('baru'),
   adminNote: text('admin_note'),
   createdAt: text('created_at').notNull().$defaultFn(now),

@@ -13,17 +13,19 @@ export default defineEventHandler(async (event) => {
   }
   const nama = str(b.nama, 100)
   const kontak = str(b.kontak, 100)
+  const sekolah = str(b.sekolah, 100)
   const isiRaw = str(b.isi, 2000)
   const kategori =
     typeof b.kategori === 'string' && b.kategori.trim() ? b.kategori.trim().slice(0, 50) : 'Lainnya'
   if (!nama) throw createError({ statusCode: 400, message: 'Nama wajib diisi (maks 100 karakter).' })
   if (!kontak) throw createError({ statusCode: 400, message: 'Kontak (WA/email) wajib diisi.' })
+  if (!sekolah) throw createError({ statusCode: 400, message: 'Nama Sekolah wajib diisi (maks 100 karakter).' })
   if (!isiRaw || isiRaw.length < 10) {
     throw createError({ statusCode: 400, message: 'Isi kendala minimal 10 karakter.' })
   }
   const [row] = await useDb()
     .insert(complaints)
-    .values({ nama, kontak, kategori, isi: isiRaw, status: 'baru' })
+    .values({ nama, kontak, sekolah, kategori, isi: isiRaw, status: 'baru' })
     .returning({ id: complaints.id })
   return { message: 'Pengaduan terkirim. Nomor tiket Anda:', ticket: row?.id }
 })

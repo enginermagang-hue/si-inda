@@ -37,7 +37,7 @@ const layananLinks: Array<{ label: string; to: string }> = [
     }"
   >
     <template #top>
-      <div class="w-full max-w-(--ui-container) mx-auto grid gap-8 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+      <div class="w-full px-4 sm:px-6 lg:px-8 max-w-(--ui-container) mx-auto grid gap-8 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
         <div>
           <h3 class="text-sm font-bold tracking-tight">{{ site.settings.site_name }}</h3>
           <p class="mt-2 max-w-prose text-sm leading-relaxed text-muted">{{ site.settings.site_tagline }}</p>
@@ -53,19 +53,8 @@ const layananLinks: Array<{ label: string; to: string }> = [
           </ul>
         </div>
         <div>
-          <h3 id="footer-kontak" class="text-sm font-semibold">Kontak</h3>
-          <p class="mt-3 max-w-prose text-sm leading-relaxed text-muted">{{ site.settings.footer_text }}</p>
-          <UButton
-            v-if="waLink"
-            :to="waLink"
-            target="_blank"
-            color="primary"
-            size="sm"
-            icon="i-lucide-message-circle"
-            class="mt-3"
-          >
-            Hubungi via WhatsApp
-          </UButton>
+          <h3 id="footer-kontak" class="text-sm font-semibold mb-3">Pengunjung</h3>
+          <VisitorWidget />
         </div>
       </div>
     </template>
@@ -75,12 +64,11 @@ const layananLinks: Array<{ label: string; to: string }> = [
         <p class="text-xs sm:text-sm text-muted">
           Copyright © {{ new Date().getFullYear() }} {{ site.settings.site_name }}
         </p>
-        <VisitorWidget />
       </div>
     </template>
 
     <nav aria-label="Navigasi footer">
-      <UNavigationMenu :items="bottomNav" variant="link" :ui="{ list: 'flex flex-wrap justify-center gap-x-1 gap-y-1' }" />
+      <UNavigationMenu :items="bottomNav" variant="link" :ui="{ list: 'flex  flex-wrap justify-center gap-x-1 gap-y-1' }" />
     </nav>
 
     <template #right>

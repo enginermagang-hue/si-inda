@@ -147,6 +147,7 @@ export interface Complaint {
   id: number
   nama: string
   kontak: string
+  sekolah: string
   kategori: string
   isi: string
   status: 'baru' | 'diproses' | 'selesai'
@@ -157,6 +158,7 @@ export interface Complaint {
 
 export interface ComplaintStatus {
   id: number
+  sekolah: string
   kategori: string
   status: 'baru' | 'diproses' | 'selesai'
   adminNote: string | null

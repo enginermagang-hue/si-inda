@@ -1,0 +1,1 @@
+ALTER TABLE `complaints` ADD `sekolah` text DEFAULT '' NOT NULL;
