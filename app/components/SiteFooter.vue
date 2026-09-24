@@ -29,7 +29,7 @@ const layananLinks: Array<{ label: string; to: string }> = [
 <template>
   <UFooter
     :ui="{
-      top: 'border-t border-default py-8 lg:py-10',
+      top: 'border-t border-default py-8 px-6 lg:py-10',
       container: 'py-6 lg:py-4 lg:gap-x-6 gap-y-4 flex flex-col lg:flex-row lg:items-center lg:justify-between',
       left: 'flex justify-center lg:justify-start lg:flex-1 order-3 lg:order-1',
       center: 'flex justify-center order-1 lg:order-2',
@@ -37,7 +37,7 @@ const layananLinks: Array<{ label: string; to: string }> = [
     }"
   >
     <template #top>
-      <div class="w-full max-w-(--ui-container) mx-auto grid gap-8 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+      <div class="w-full max-w-(--ui-container) px-8 mx-auto grid gap-8 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
         <div>
           <h3 class="text-sm font-bold tracking-tight">{{ site.settings.site_name }}</h3>
           <p class="mt-2 max-w-prose text-sm leading-relaxed text-muted">{{ site.settings.site_tagline }}</p>
