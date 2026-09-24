@@ -41,7 +41,7 @@ const services = [
       :description="site.settings.site_tagline"
       :links="[
         { label: 'Sampaikan Kendala Dapodik', to: '/pengaduan', color: 'primary' },
-        { label: 'Lihat Statistik', to: '/statistik/satuan-pendidikan', variant: 'outline', color: 'neutral' },
+        { label: 'Lihat Statistik', to: '/statistik', variant: 'outline', color: 'neutral' },
       ]"
     />
 
@@ -51,7 +51,7 @@ const services = [
           v-for="(meta, key) in STAT_META"
           :key="key"
           :title="meta.title"
-          :to="meta.route"
+          to="/statistik"
           variant="outline"
         >
           <p class="text-3xl font-bold tracking-tight text-primary">

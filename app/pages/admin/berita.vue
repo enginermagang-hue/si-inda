@@ -240,30 +240,6 @@ async function remove(id: number): Promise<void> {
       </template>
     </UModal>
 
-    <UModal v-model:open="lightboxOpen" :fullscreen="true">
-      <template #header>
-        <div class="flex items-center justify-between px-4 py-3">
-          <p class="text-sm font-medium">Preview Gambar</p>
-          <UButton icon="i-lucide-x" variant="ghost" color="neutral" @click="lightboxOpen = false" />
-        </div>
-      </template>
-      <template #body>
-        <div class="h-full flex flex-col">
-          <div v-if="lightboxImages.length" class="flex-1 flex items-center justify-center overflow-hidden">
-            <img
-              :src="lightboxImages[lightboxIndex]?.filePath ?? ''"
-              class="w-full h-full object-contain max-h-screen"
-              loading="eager"
-            >
-          </div>
-          <div class="px-4 py-3 text-center border-t border-default">
-            <p v-if="lightboxImages[lightboxIndex]?.description" class="text-sm font-medium">
-              {{ lightboxImages[lightboxIndex]!.description }}
-            </p>
-            <p v-else class="text-sm text-muted">Tanpa deskripsi</p>
-          </div>
-        </div>
-      </template>
-    </UModal>
+    <NewsImageLightbox v-model:open="lightboxOpen" :images="lightboxImages" :initial-index="lightboxIndex" />
   </div>
 </template>

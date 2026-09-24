@@ -68,7 +68,7 @@ await Promise.all([loadPopular(), load()])
 </script>
 
 <template>
-  <div class="mx-auto max-w-3xl px-4 py-10">
+  <div class="mx-auto px-4 py-10">
     <h1 class="text-3xl font-bold tracking-tight">Pertanyaan Umum (FAQ)</h1>
     <p class="mt-1 text-sm text-muted">Cari jawaban seputar layanan Dapodik.</p>
 

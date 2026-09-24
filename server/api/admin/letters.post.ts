@@ -15,6 +15,8 @@ export default defineEventHandler(async (event) => {
   const nomorSurat = get('nomor_surat')
   const judul = get('judul')
   const tanggalSurat = get('tanggal_surat')
+  const deskripsiRaw = get('deskripsi')
+  const deskripsi = deskripsiRaw ? deskripsiRaw.slice(0, 500) : null
   const isPublished = get('is_published') !== '0'
   if (!nomorSurat || !judul || !tanggalSurat) {
     throw createError({ statusCode: 400, message: 'nomor_surat, judul, dan tanggal_surat wajib diisi.' })
@@ -31,7 +33,7 @@ export default defineEventHandler(async (event) => {
   }
   const [row] = await useDb()
     .insert(letters)
-    .values({ nomorSurat, judul, tanggalSurat, filePath: stored.url, dropboxPath: stored.path, isPublished: isPublished ? 1 : 0 })
+    .values({ nomorSurat, judul, tanggalSurat, deskripsi, filePath: stored.url, dropboxPath: stored.path, isPublished: isPublished ? 1 : 0 })
     .returning()
   return { data: row }
 })

@@ -58,6 +58,7 @@ export const letters = sqliteTable('letters', {
   nomorSurat: text('nomor_surat').notNull(),
   judul: text('judul').notNull(),
   tanggalSurat: text('tanggal_surat').notNull(),
+  deskripsi: text('deskripsi'),
   /** URL publik file: path relatif lokal (uploads/...) atau URL Dropbox. */
   filePath: text('file_path'),
   /** Path internal Dropbox untuk hapus (NULL untuk driver lokal). */

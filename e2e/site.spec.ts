@@ -5,9 +5,9 @@ test('homepage menampilkan microsite dapodik', async ({ page }) => {
   await expect(page.locator('h1').first()).toContainText('Dapodik')
 })
 
-test('halaman statistik guru bisa dibuka', async ({ page }) => {
-  await page.goto('/statistik/guru')
-  await expect(page.locator('h1')).toContainText('Guru')
+test('halaman statistik bisa dibuka', async ({ page }) => {
+  await page.goto('/statistik')
+  await expect(page.locator('h1')).toContainText('Statistik Dapodik')
 })
 
 test('halaman pengaduan bisa dibuka dan form ada', async ({ page }) => {

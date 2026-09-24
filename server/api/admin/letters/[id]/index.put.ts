@@ -20,9 +20,13 @@ export default defineEventHandler(async (event) => {
   const nomorSurat = get('nomor_surat')
   const judul = get('judul')
   const tanggalSurat = get('tanggal_surat')
+  const deskripsiRaw = get('deskripsi')
   if (nomorSurat) patch.nomorSurat = nomorSurat
   if (judul) patch.judul = judul
   if (tanggalSurat) patch.tanggalSurat = tanggalSurat
+  // deskripsi optional: if field present in form, update (empty string => null)
+  const hasDeskripsi = form?.some((x) => x.name === 'deskripsi')
+  if (hasDeskripsi) patch.deskripsi = deskripsiRaw ? deskripsiRaw.slice(0, 500) : null
   patch.isPublished = get('is_published') !== '0' ? 1 : 0
   const file = form?.find((x) => x.name === 'file' && x.filename)
   try {

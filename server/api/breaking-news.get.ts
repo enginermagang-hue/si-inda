@@ -1,18 +1,55 @@
-import { desc, eq, asc } from 'drizzle-orm'
+import { desc, eq, asc, and, or, isNull, gte, sql } from 'drizzle-orm'
 import { useDb } from '../utils/db'
 import { breakingNews, breakingNewsImages } from '../db/schema'
 
-// GET /api/breaking-news — yang aktif & belum kedaluwarsa
-export default defineEventHandler(async () => {
+// GET /api/breaking-news?page=&limit= — yang aktif & belum kedaluwarsa, terbaru dulu
+export default defineEventHandler(async (event) => {
+  const q = getQuery(event)
+  const rawPage = Number(q.page)
+  const rawLimit = Number(q.limit)
+  const hasPagination = q.page !== undefined || q.limit !== undefined
+
+  const page = hasPagination ? Math.max(1, Number.isFinite(rawPage) ? Math.floor(rawPage) : 1) : 1
+  const limit = hasPagination
+    ? Math.min(Math.max(Number.isFinite(rawLimit) ? Math.floor(rawLimit) : 9, 1), 50)
+    : 0 // 0 = no pagination (return all, backward compat for homepage ticker)
+
   const now = new Date().toISOString()
+  const whereActive = and(
+    eq(breakingNews.isActive, 1),
+    or(isNull(breakingNews.expiresAt), gte(breakingNews.expiresAt, now)),
+  )
+
+  // total for meta when paginated
+  let total = 0
+  if (hasPagination) {
+    const countRes = await useDb()
+      .select({ cnt: sql<number>`count(*)` })
+      .from(breakingNews)
+      .where(whereActive)
+    total = Number(countRes[0]?.cnt ?? 0)
+  }
+
+  const totalPages = hasPagination && limit > 0 ? Math.max(1, Math.ceil(total / limit)) : 1
+  const safePage = hasPagination ? Math.min(page, totalPages) : 1
+  const offset = hasPagination ? (safePage - 1) * limit : 0
+
   const rows = await useDb().query.breakingNews.findMany({
-    where: eq(breakingNews.isActive, 1),
-    orderBy: [desc(breakingNews.publishedAt)],
+    where: whereActive,
+    orderBy: [desc(breakingNews.publishedAt), desc(breakingNews.id)],
+    ...(hasPagination ? { limit, offset } : {}),
   })
-  const active = rows.filter((r) => !r.expiresAt || r.expiresAt >= now)
+
+  if (!hasPagination) {
+    const allCountRes = await useDb()
+      .select({ cnt: sql<number>`count(*)` })
+      .from(breakingNews)
+      .where(whereActive)
+    total = Number(allCountRes[0]?.cnt ?? rows.length)
+  }
 
   const result = await Promise.all(
-    active.map(async (row) => {
+    rows.map(async (row) => {
       const images = await useDb()
         .select()
         .from(breakingNewsImages)
@@ -21,5 +58,9 @@ export default defineEventHandler(async () => {
       return { ...row, images }
     }),
   )
-  return { data: result }
+
+  if (hasPagination) {
+    return { data: result, meta: { total, page: safePage, limit, totalPages } }
+  }
+  return { data: result, meta: { total, page: 1, limit: total, totalPages: 1 } }
 })

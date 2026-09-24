@@ -3,6 +3,8 @@
     <UFileUpload
       v-model="selectedFiles"
       multiple
+      :preview="false"
+      :reset="true"
       accept="image/*"
       label="Pilih gambar (banyak)"
       description="PNG, JPG, GIF, WebP — maks 2 MB per file"
@@ -101,11 +103,14 @@ function removePending(i: number) {
 
 watch(selectedFiles, (files) => {
   if (!files || !files.length) return
-  pendingUploads.value = files.map((f) => ({
-    file: f,
-    description: '',
-    preview: f.type.startsWith('image/') ? URL.createObjectURL(f) : null,
-  }))
+  pendingUploads.value = [
+    ...pendingUploads.value,
+    ...files.map((f) => ({
+      file: f,
+      description: '',
+      preview: f.type.startsWith('image/') ? URL.createObjectURL(f) : null,
+    })),
+  ]
   selectedFiles.value = []
 })
 

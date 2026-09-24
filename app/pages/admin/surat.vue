@@ -13,6 +13,7 @@ const saving = ref(false)
 const nomorSurat = ref('')
 const judul = ref('')
 const tanggalSurat = ref('')
+const deskripsi = ref('')
 const isPublished = ref(true)
 const fileInput = ref<HTMLInputElement | null>(null)
 
@@ -39,6 +40,7 @@ function startAdd(): void {
   nomorSurat.value = ''
   judul.value = ''
   tanggalSurat.value = ''
+  deskripsi.value = ''
   isPublished.value = true
   if (fileInput.value) fileInput.value.value = ''
   showForm.value = true
@@ -49,6 +51,7 @@ function startEdit(row: Letter): void {
   nomorSurat.value = row.nomorSurat
   judul.value = row.judul
   tanggalSurat.value = row.tanggalSurat.slice(0, 10)
+  deskripsi.value = row.deskripsi ?? ''
   isPublished.value = row.isPublished === 1
   if (fileInput.value) fileInput.value.value = ''
   showForm.value = true
@@ -75,6 +78,7 @@ async function save(): Promise<void> {
     form.append('nomor_surat', nomorSurat.value.trim())
     form.append('judul', judul.value.trim())
     form.append('tanggal_surat', tanggalSurat.value)
+    form.append('deskripsi', deskripsi.value.trim())
     form.append('is_published', isPublished.value ? '1' : '0')
     if (file) form.append('file', file)
     if (editingId.value) await api.putForm(`/admin/letters/${editingId.value}`, form)
@@ -119,6 +123,9 @@ async function remove(id: number): Promise<void> {
       <UFormField label="Judul / perihal" class="mt-3">
         <UInput v-model="judul" class="w-full" />
       </UFormField>
+      <UFormField label="Deskripsi (opsional)" class="mt-3" hint="Maks 500 karakter">
+        <UTextarea v-model="deskripsi" :rows="3" placeholder="Ringkasan singkat surat..." :maxlength="500" class="w-full" />
+      </UFormField>
       <UFormField :label="`File PDF${editingId ? ' (kosongkan bila tidak diganti)' : ''}`" class="mt-3">
         <input
           ref="fileInput"
@@ -138,9 +145,10 @@ async function remove(id: number): Promise<void> {
     <div v-else class="mt-4 space-y-2">
       <UCard v-for="row in rows" :key="row.id">
         <div class="flex items-center justify-between gap-3">
-          <div>
+          <div class="min-w-0">
             <p class="font-medium">{{ row.judul }}</p>
-            <p class="text-xs text-muted">
+            <p v-if="row.deskripsi" class="mt-1 text-sm text-muted line-clamp-2">{{ row.deskripsi }}</p>
+            <p class="mt-1 text-xs text-muted">
               {{ row.nomorSurat }} • {{ row.tanggalSurat.slice(0, 10) }} •
               <span v-if="row.isPublished" class="text-success">Publish</span>
               <span v-else>Draf</span>

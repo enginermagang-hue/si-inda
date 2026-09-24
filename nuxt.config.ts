@@ -33,6 +33,13 @@ export default defineNuxtConfig({
     },
   },
 
+  routeRules: {
+    '/statistik/satuan-pendidikan': { redirect: '/statistik' },
+    '/statistik/peserta-didik': { redirect: '/statistik' },
+    '/statistik/guru': { redirect: '/statistik' },
+    '/statistik/tendik': { redirect: '/statistik' },
+  },
+
   runtimeConfig: {
     // Server-only (baca dari env NUXT_JWT_SECRET, dst.)
     jwtSecret: '',

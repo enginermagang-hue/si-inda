@@ -44,12 +44,8 @@ const fallbackSarana = [
 const items = computed(() => [
   {
     label: 'Statistik Dapodik',
-    children: [
-      { label: 'Jumlah Satuan Pendidikan', to: '/statistik/satuan-pendidikan' },
-      { label: 'Jumlah Peserta Didik', to: '/statistik/peserta-didik' },
-      { label: 'Jumlah Guru', to: '/statistik/guru' },
-      { label: 'Jumlah Tendik', to: '/statistik/tendik' },
-    ],
+    to: '/statistik',
+    active: route.path.startsWith('/statistik'),
   },
   {
     label: 'Informasi',

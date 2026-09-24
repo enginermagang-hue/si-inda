@@ -79,6 +79,7 @@ export interface Letter {
   nomorSurat: string
   judul: string
   tanggalSurat: string
+  deskripsi: string | null
   filePath: string | null
   dropboxPath: string | null
   isPublished: number
@@ -181,18 +182,18 @@ export const STAT_META: Record<Statistic['category'], { title: string; subtitle:
   satuan_pendidikan: {
     title: 'Jumlah Satuan Pendidikan',
     subtitle: 'Total satuan pendidikan terdata Dapodik',
-    route: '/statistik/satuan-pendidikan',
+    route: '/statistik',
   },
   peserta_didik: {
     title: 'Jumlah Peserta Didik',
     subtitle: 'Total peserta didik terdata Dapodik',
-    route: '/statistik/peserta-didik',
+    route: '/statistik',
   },
-  guru: { title: 'Jumlah Guru', subtitle: 'Total guru terdata Dapodik', route: '/statistik/guru' },
+  guru: { title: 'Jumlah Guru', subtitle: 'Total guru terdata Dapodik', route: '/statistik' },
   tendik: {
     title: 'Jumlah Tendik',
     subtitle: 'Total tenaga kependidikan terdata Dapodik',
-    route: '/statistik/tendik',
+    route: '/statistik',
   },
 }
 
