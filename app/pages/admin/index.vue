@@ -3,18 +3,19 @@ import { api, type Complaint } from '~/composables/api'
 
 definePageMeta({ layout: 'admin', middleware: 'admin' })
 
-const counts = ref({ statistik: 0, halaman: 0, surat: 0, link: 0, berita: 0, baru: 0, diproses: 0 })
+const counts = ref({ statistik: 0, halaman: 0, surat: 0, link: 0, berita: 0, baru: 0, diproses: 0, pengunjung: 0, today: 0 })
 const loading = ref(true)
 
 onMounted(async () => {
   try {
-    const [s, p, l, li, n, c] = await Promise.all([
+    const [s, p, l, li, n, c, v] = await Promise.all([
       api.get<{ data: unknown[] }>('/admin/statistics'),
       api.get<{ data: unknown[] }>('/admin/pages'),
       api.get<{ data: unknown[] }>('/admin/letters'),
       api.get<{ data: unknown[] }>('/admin/links'),
       api.get<{ data: unknown[] }>('/admin/news'),
       api.get<{ data: Complaint[] }>('/admin/complaints'),
+      api.get<{ data: { total: number; today: number } }>('/admin/visits/stats?range=all').catch(() => ({ data: { total: 0, today: 0 } })),
     ])
     counts.value = {
       statistik: s.data.length,
@@ -24,6 +25,8 @@ onMounted(async () => {
       berita: n.data.length,
       baru: c.data.filter((x) => x.status === 'baru').length,
       diproses: c.data.filter((x) => x.status === 'diproses').length,
+      pengunjung: (v.data as { total: number }).total ?? 0,
+      today: (v.data as { today: number }).today ?? 0,
     }
   } catch {
     // biarkan nol bila API gagal
@@ -39,6 +42,8 @@ const cards = computed(() => [
   { label: 'Link Informasi', value: counts.value.link, to: '/admin/link' },
   { label: 'Breaking News', value: counts.value.berita, to: '/admin/berita' },
   { label: 'Pengaduan Baru', value: counts.value.baru, to: '/admin/pengaduan', alert: counts.value.baru > 0 },
+  { label: 'Pengunjung Hari Ini', value: counts.value.today, to: '/admin/pengunjung' },
+  { label: 'Total Pengunjung', value: counts.value.pengunjung, to: '/admin/pengunjung' },
 ])
 </script>
 

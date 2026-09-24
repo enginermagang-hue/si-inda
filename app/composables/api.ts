@@ -178,6 +178,19 @@ export interface AdminMe {
   mustChangePassword: boolean
 }
 
+export interface VisitorStats {
+  total: number
+  today: number
+  todayUniques: number
+  online: number
+  uniquesTotal: number
+  daily: Array<{ date: string; hits: number; uniques: number }>
+  topPages: Array<{ path: string; hits: number }>
+  topReferers: Array<{ referer: string | null; hits: number }>
+  topCountries: Array<{ country: string | null; hits: number }>
+  recent: Array<{ id: number; path: string; ip: string | null; visitorId: string | null; userAgent: string | null; referer: string | null; country: string | null; createdAt: string }>
+}
+
 export const STAT_META: Record<Statistic['category'], { title: string; subtitle: string; route: string }> = {
   satuan_pendidikan: {
     title: 'Jumlah Satuan Pendidikan',

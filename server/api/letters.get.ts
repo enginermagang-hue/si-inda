@@ -1,13 +1,25 @@
-import { desc, eq, sql } from 'drizzle-orm'
+import { desc, eq, and, or, like, sql } from 'drizzle-orm'
 import { useDb } from '../utils/db'
 import { letters } from '../db/schema'
 
-// GET /api/letters?page=&limit= — surat yang dipublish (terbaru dulu)
+// GET /api/letters?page=&limit=&q= — surat yang dipublish (terbaru dulu)
 export default defineEventHandler(async (event) => {
   const q = getQuery(event)
   const rawPage = Number(q.page)
   const rawLimit = Number(q.limit)
   const hasPagination = q.page !== undefined || q.limit !== undefined
+  const keyword = typeof q.q === 'string' ? q.q.trim().slice(0, 100) : ''
+  const baseWhere = eq(letters.isPublished, 1)
+  const where = keyword
+    ? and(
+        baseWhere,
+        or(
+          like(letters.judul, `%${keyword}%`),
+          like(letters.deskripsi, `%${keyword}%`),
+          like(letters.nomorSurat, `%${keyword}%`),
+        )!,
+      )
+    : baseWhere
 
   const page = hasPagination ? Math.max(1, Number.isFinite(rawPage) ? Math.floor(rawPage) : 1) : 1
   const limit = hasPagination
@@ -19,7 +31,7 @@ export default defineEventHandler(async (event) => {
     const countRes = await useDb()
       .select({ cnt: sql<number>`count(*)` })
       .from(letters)
-      .where(eq(letters.isPublished, 1))
+      .where(where)
     total = Number(countRes[0]?.cnt ?? 0)
   }
 
@@ -28,7 +40,7 @@ export default defineEventHandler(async (event) => {
   const offset = hasPagination ? (safePage - 1) * limit : 0
 
   const rows = await useDb().query.letters.findMany({
-    where: eq(letters.isPublished, 1),
+    where,
     orderBy: [desc(letters.tanggalSurat), desc(letters.id)],
     ...(hasPagination ? { limit, offset } : {}),
   })
@@ -37,7 +49,7 @@ export default defineEventHandler(async (event) => {
     const countRes = await useDb()
       .select({ cnt: sql<number>`count(*)` })
       .from(letters)
-      .where(eq(letters.isPublished, 1))
+      .where(where)
     total = Number(countRes[0]?.cnt ?? rows.length)
   }
 

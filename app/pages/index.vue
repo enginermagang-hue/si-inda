@@ -1,9 +1,26 @@
 <script setup lang="ts">
+import type { ButtonProps } from '@nuxt/ui'
 import { STAT_META, type NewsItem, type Statistic } from '~/composables/api'
 import { useSiteStore } from '~/stores/site'
 
 const site = useSiteStore()
 await site.load()
+
+const heroLinks = ref<ButtonProps[]>([
+  {
+    label: 'Sampaikan Kendala Dapodik',
+    to: '/pengaduan',
+    icon: 'i-lucide-megaphone',
+    color: 'primary',
+  },
+  {
+    label: 'Lihat Statistik',
+    to: '/statistik',
+    color: 'neutral',
+    variant: 'subtle',
+    trailingIcon: 'i-lucide-arrow-right',
+  },
+])
 
 const { data: statsRes } = await useFetch<{ data: Statistic[] }>('/api/statistics', {
   default: () => ({ data: [] as Statistic[] }),
@@ -39,11 +56,19 @@ const services = [
     <UPageHero
       :title="site.settings.site_name"
       :description="site.settings.site_tagline"
-      :links="[
-        { label: 'Sampaikan Kendala Dapodik', to: '/pengaduan', color: 'primary' },
-        { label: 'Lihat Statistik', to: '/statistik', variant: 'outline', color: 'neutral' },
-      ]"
-    />
+      headline="Terintegrasi Dapodik"
+      orientation="horizontal"
+      :links="heroLinks"
+    >
+      <img
+        src="/hero.jpg"
+        alt="Ilustrasi pendataan Dapodik"
+        class="rounded-lg shadow-2xl ring ring-default w-full object-cover aspect-[4/3] lg:aspect-[16/10]"
+        loading="eager"
+        decoding="async"
+        fetchpriority="high"
+      >
+    </UPageHero>
 
     <UPageSection title="Statistik Dapodik">
       <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">

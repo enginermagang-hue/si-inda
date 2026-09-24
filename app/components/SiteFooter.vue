@@ -10,78 +10,65 @@ const waLink = computed(() => {
   return raw ? `https://wa.me/${raw}` : ''
 })
 
-const items: NavigationMenuItem[] = [
+const bottomNav: NavigationMenuItem[] = [
   { label: 'Beranda', to: '/' },
-  { label: 'Statistik Dapodik', to: '/statistik' },
+  { label: 'Statistik', to: '/statistik' },
   { label: 'Layanan PTK', to: '/ptk/syarat-pengajuan-nuptk' },
   { label: 'Pengaduan', to: '/pengaduan' },
   { label: 'FAQ', to: '/faq' },
+]
+
+const layananLinks: Array<{ label: string; to: string }> = [
+  { label: 'Statistik Dapodik', to: '/statistik' },
+  { label: 'Pengajuan NUPTK & Mutasi', to: '/ptk/syarat-pengajuan-nuptk' },
+  { label: 'Peserta Didik & Sarana', to: '/peserta-didik/syarat-mutasi-peserta-didik' },
+  { label: 'Pengaduan Kendala Dapodik', to: '/pengaduan' },
 ]
 </script>
 
 <template>
   <UFooter
     :ui="{
-      top: 'py-6 px-6 sm:py-8 lg:py-12',
-      container: 'py-6 px-6 flex flex-col gap-4 lg:gap-x-3 lg:py-4 lg:flex-row lg:items-center lg:justify-between',
-      left: 'flex justify-center lg:justify-start lg:flex-3 order-3 lg:order-1 mt-0',
-      center: 'flex justify-center order-1 lg:order-2 w-full',
-      right: 'flex justify-center lg:justify-end lg:flex-1 order-2 lg:order-3'
+      top: 'border-t border-default py-8 lg:py-10',
+      container: 'py-6 lg:py-4 lg:gap-x-6 gap-y-4 flex flex-col lg:flex-row lg:items-center lg:justify-between',
+      left: 'flex justify-center lg:justify-start lg:flex-1 order-3 lg:order-1',
+      center: 'flex justify-center order-1 lg:order-2',
+      right: 'hidden lg:flex lg:justify-end lg:flex-1 order-2 lg:order-3',
     }"
   >
     <template #top>
-      <div class="mx-auto w-full max-w-6xl">
-        <div class="grid gap-6 sm:gap-8 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-          <div>
-            <p class="font-bold">{{ site.settings.site_name }}</p>
-            <p class="mt-2 text-sm text-muted">{{ site.settings.site_tagline }}</p>
-          </div>
-          <div>
-            <p class="font-semibold">Layanan</p>
-            <ul class="mt-2 space-y-1 text-sm text-muted">
-              <li>Statistik Dapodik</li>
-              <li>Pengajuan NUPTK &amp; Mutasi</li>
-              <li>Peserta Didik &amp; Sarana Prasarana</li>
-              <li>Pengaduan Kendala Dapodik</li>
-            </ul>
-          </div>
-          <div>
-            <p class="font-semibold">Kontak</p>
-            <p class="mt-2 text-sm text-muted">{{ site.settings.footer_text }}</p>
-            <UButton
-              v-if="waLink"
-              :to="waLink"
-              target="_blank"
-              color="primary"
-              size="md"
-              class="mt-3 w-full sm:w-auto justify-center"
-            >
-              Hubungi via WhatsApp
-            </UButton>
-          </div>
+      <div class="w-full max-w-(--ui-container) mx-auto grid gap-8 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+        <div>
+          <h3 class="text-sm font-bold tracking-tight">{{ site.settings.site_name }}</h3>
+          <p class="mt-2 max-w-prose text-sm leading-relaxed text-muted">{{ site.settings.site_tagline }}</p>
+        </div>
+        <div>
+          <h3 id="footer-layanan" class="text-sm font-semibold">Layanan</h3>
+          <ul class="mt-3 space-y-2 text-sm" aria-labelledby="footer-layanan">
+            <li v-for="l in layananLinks" :key="l.to">
+              <ULink :to="l.to" class="text-muted hover:text-highlighted transition-colors">
+                {{ l.label }}
+              </ULink>
+            </li>
+          </ul>
+        </div>
+        <div>
+          <h3 id="footer-kontak" class="text-sm font-semibold mb-4">Pengunjung</h3>
+          <VisitorWidget />
         </div>
       </div>
     </template>
 
     <template #left>
-      <p class="text-sm text-muted text-center lg:text-left">
-        Copyright © {{ new Date().getFullYear() }}
-      </p>
+      <div class="flex w-full flex-col items-center gap-2 lg:items-start text-center lg:text-left">
+        <p class="text-xs sm:text-sm text-muted">
+          Copyright © {{ new Date().getFullYear() }} {{ site.settings.site_name }}
+        </p>
+      </div>
     </template>
 
-    <UNavigationMenu :items="items" variant="link" :ui="{ list: 'flex flex-wrap justify-center gap-x-1 gap-y-1 sm:gap-x-2' }" class="w-full justify-center" />
-
-    <template #right>
-      <UTooltip v-if="waLink" text="WhatsApp">
-        <UButton
-          icon="i-lucide-message-circle"
-          color="neutral"
-          variant="ghost"
-          :to="waLink"
-          target="_blank"
-          aria-label="WhatsApp"
-        />
-      </UTooltip>
-    </template>
+    <nav aria-label="Navigasi footer">
+      <UNavigationMenu :items="bottomNav" variant="link" :ui="{ list: 'flex flex-wrap justify-center gap-x-1 gap-y-1' }" />
+    </nav>
   </UFooter>
 </template>

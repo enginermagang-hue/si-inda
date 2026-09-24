@@ -78,6 +78,11 @@ function getItems(state: 'collapsed' | 'expanded') {
       to: '/admin/pengaduan'
     },
     {
+      label: 'Pengunjung',
+      icon: 'i-lucide-eye',
+      to: '/admin/pengunjung'
+    },
+    {
       label: 'Pengaturan',
       icon: 'i-lucide-settings',
       defaultOpen: true,

@@ -147,3 +147,22 @@ export const complaints = sqliteTable('complaints', {
   createdAt: text('created_at').notNull().$defaultFn(now),
   updatedAt: text('updated_at').notNull().$defaultFn(now),
 })
+
+/** Hit pengunjung per pageview (hit mentah). */
+export const visits = sqliteTable('visits', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  path: text('path').notNull(),
+  ip: text('ip'),
+  visitorId: text('visitor_id'),
+  userAgent: text('user_agent'),
+  referer: text('referer'),
+  country: text('country'),
+  createdAt: text('created_at').notNull().$defaultFn(now),
+})
+
+/** Agregasi harian untuk chart cepat. */
+export const visitDaily = sqliteTable('visit_daily', {
+  date: text('date').primaryKey(),
+  hits: integer('hits').notNull().default(0),
+  uniques: integer('uniques').notNull().default(0),
+})

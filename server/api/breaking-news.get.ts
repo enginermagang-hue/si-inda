@@ -1,13 +1,14 @@
-import { desc, eq, asc, and, or, isNull, gte, sql } from 'drizzle-orm'
+import { desc, eq, asc, and, or, isNull, gte, like, sql } from 'drizzle-orm'
 import { useDb } from '../utils/db'
 import { breakingNews, breakingNewsImages } from '../db/schema'
 
-// GET /api/breaking-news?page=&limit= — yang aktif & belum kedaluwarsa, terbaru dulu
+// GET /api/breaking-news?page=&limit=&q= — yang aktif & belum kedaluwarsa, terbaru dulu
 export default defineEventHandler(async (event) => {
   const q = getQuery(event)
   const rawPage = Number(q.page)
   const rawLimit = Number(q.limit)
   const hasPagination = q.page !== undefined || q.limit !== undefined
+  const keyword = typeof q.q === 'string' ? q.q.trim().slice(0, 100) : ''
 
   const page = hasPagination ? Math.max(1, Number.isFinite(rawPage) ? Math.floor(rawPage) : 1) : 1
   const limit = hasPagination
@@ -18,6 +19,7 @@ export default defineEventHandler(async (event) => {
   const whereActive = and(
     eq(breakingNews.isActive, 1),
     or(isNull(breakingNews.expiresAt), gte(breakingNews.expiresAt, now)),
+    ...(keyword ? [or(like(breakingNews.title, `%${keyword}%`), like(breakingNews.body, `%${keyword}%`))!] : []),
   )
 
   // total for meta when paginated

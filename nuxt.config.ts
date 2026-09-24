@@ -20,7 +20,7 @@ export default defineNuxtConfig({
 
   app: {
     head: {
-      title: 'SIINDAH — Layanan Dapodik',
+      title: 'Si-Inda (Sistem Informasi Dapodik)',
       meta: [
         { charset: 'utf-8' },
         { name: 'viewport', content: 'width=device-width, initial-scale=1' },

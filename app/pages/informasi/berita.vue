@@ -7,21 +7,56 @@ const router = useRouter()
 const LIMIT = 9
 
 const page = ref(Math.max(1, Number(route.query.page) || 1))
+const q = ref(typeof route.query.q === 'string' ? route.query.q : '')
+const qDebounced = ref(q.value)
+let debounce: ReturnType<typeof setTimeout> | null = null
+
+function syncQuery(): void {
+  const query: Record<string, string> = { ...route.query as Record<string, string> }
+  if (page.value <= 1) delete query.page
+  else query.page = String(page.value)
+  const trimmed = qDebounced.value.trim()
+  if (trimmed) query.q = trimmed
+  else delete query.q
+  const cur = route.query as Record<string, string | undefined>
+  if (cur.page !== query.page || cur.q !== query.q) router.replace({ query })
+}
 
 watch(() => route.query.page, (val) => {
   const n = Math.max(1, Number(val) || 1)
   if (n !== page.value) page.value = n
 })
 
-watch(page, (p) => {
-  const q = { ...route.query }
-  if (p <= 1) delete q.page
-  else q.page = String(p)
-  router.replace({ query: q })
+watch(() => route.query.q, (val) => {
+  const v = typeof val === 'string' ? val : ''
+  if (v !== q.value) q.value = v
+  if (v !== qDebounced.value) qDebounced.value = v
 })
 
+watch(page, syncQuery)
+watch(qDebounced, () => {
+  page.value = 1
+  syncQuery()
+})
+
+function onSearchInput(): void {
+  if (debounce) clearTimeout(debounce)
+  debounce = setTimeout(() => { qDebounced.value = q.value }, 350)
+}
+
+function clearSearch(): void {
+  if (debounce) clearTimeout(debounce)
+  q.value = ''
+  qDebounced.value = ''
+}
+
 const { data: res } = await useFetch<{ data: NewsItem[]; meta: { total: number; page: number; limit: number; totalPages: number } }>('/api/breaking-news', {
-  query: computed(() => ({ page: page.value, limit: LIMIT })),
+  query: computed(() => {
+    const base: Record<string, string | number> = { page: page.value, limit: LIMIT }
+    const trimmed = qDebounced.value.trim()
+    if (trimmed) base.q = trimmed
+    return base
+  }),
   default: () => ({ data: [] as NewsItem[], meta: { total: 0, page: 1, limit: LIMIT, totalPages: 1 } }),
 })
 
@@ -64,6 +99,14 @@ function onPageChange(p: number): void {
     <h1 class="mt-1 text-2xl font-bold tracking-tight sm:text-3xl">Breaking News</h1>
     <p class="mt-1 text-sm text-muted">Kabar terbaru seputar pendataan Dapodik.</p>
 
+    <div class="mt-4 flex gap-2">
+      <UInput v-model="q" icon="i-lucide-search" placeholder="Cari berita…" class="flex-1" @update:model-value="onSearchInput" />
+      <UButton v-if="q" variant="ghost" color="neutral" icon="i-lucide-x" @click="clearSearch">Bersihkan</UButton>
+    </div>
+    <p v-if="qDebounced.trim()" class="mt-2 text-xs text-muted">
+      {{ total }} hasil untuk "{{ qDebounced.trim() }}"
+    </p>
+
     <div v-if="items.length" class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
       <UCard v-for="item in items" :key="item.id" class="flex flex-col overflow-hidden">
         <div class="flex-1 min-w-0">
@@ -101,7 +144,12 @@ function onPageChange(p: number): void {
         <p v-if="(item.images?.length ?? 0) > 4" class="mt-2 text-xs text-muted text-center">{{ item.images!.length }} gambar — klik untuk lihat semua</p>
       </UCard>
     </div>
-    <UEmpty v-else title="Belum ada berita" description="Belum ada berita aktif." class="mt-6" />
+    <UEmpty
+      v-else
+      :title="qDebounced.trim() ? 'Tidak ada hasil' : 'Belum ada berita'"
+      :description="qDebounced.trim() ? `Tidak ada berita untuk '${qDebounced.trim()}'` : 'Belum ada berita aktif.'"
+      class="mt-6"
+    />
 
     <div v-if="total > LIMIT" class="mt-6 flex justify-center">
       <UPagination v-model:page="page" :total="total" :items-per-page="LIMIT" :sibling-count="1" show-edges @update:page="onPageChange" />
