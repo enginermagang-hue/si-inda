@@ -142,7 +142,7 @@ function removeDetail(category: 'satuan_pendidikan' | 'peserta_didik' | 'guru' |
           <div
             v-for="(detail, idx) in catData.detail"
             :key="idx"
-            class="border rounded-lg p-4 bg-default"
+            class="border border-gray-200 dark:border-gray-800 rounded-lg p-4 bg-default"
           >
             <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               <UFormField label="Jenjang">
