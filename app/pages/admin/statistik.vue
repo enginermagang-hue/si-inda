@@ -11,6 +11,10 @@ const error = ref<string | null>(null)
 const saving = ref(false)
 const activeCategory = ref<'satuan_pendidikan' | 'peserta_didik' | 'guru' | 'tendik'>('satuan_pendidikan')
 const successMessage = ref('')
+const editingDetail = ref<StatisticsDetailItem | null>(null)
+const editingCategoryKey = ref<'satuan_pendidikan' | 'peserta_didik' | 'guru' | 'tendik' | null>(null)
+const editingIndex = ref(-1)
+const showModal = ref(false)
 
 const categories = [
   { value: 'satuan_pendidikan', label: 'Satuan Pendidikan' },
@@ -66,26 +70,58 @@ async function save(): Promise<void> {
   }
 }
 
-function addDetail(category: 'satuan_pendidikan' | 'peserta_didik' | 'guru' | 'tendik'): void {
-  if (!statisticsData.value) return
-  const catData = statisticsData.value.categories[category]
-  const newDetail: StatisticsDetailItem = { jenjang: '', value: 0, kabupaten: '' }
+function getDefaultDetail(category: string): StatisticsDetailItem {
+  const detail: StatisticsDetailItem = { jenjang: '', value: 0, kabupaten: '' }
   if (category === 'guru' || category === 'tendik') {
-    newDetail.pns = 0
-    newDetail.non_pns = 0
+    detail.pns = 0
+    detail.non_pns = 0
   }
   if (category === 'peserta_didik') {
-    newDetail.laki = 0
-    newDetail.perempuan = 0
+    detail.laki = 0
+    detail.perempuan = 0
   }
-  catData.detail.push(newDetail)
+  return detail
+}
+
+function startAdd(category: 'satuan_pendidikan' | 'peserta_didik' | 'guru' | 'tendik'): void {
+  editingCategoryKey.value = category
+  editingIndex.value = -1
+  editingDetail.value = getDefaultDetail(category)
+  showModal.value = true
+}
+
+function startEdit(category: 'satuan_pendidikan' | 'peserta_didik' | 'guru' | 'tendik', detail: StatisticsDetailItem, index: number): void {
+  editingCategoryKey.value = category
+  editingIndex.value = index
+  editingDetail.value = { ...detail }
+  showModal.value = true
+}
+
+function saveDetail(): void {
+  if (!statisticsData.value || !editingCategoryKey.value || !editingDetail.value) return
+  const catData = statisticsData.value.categories[editingCategoryKey.value]
+  if (editingIndex.value >= 0) {
+    catData.detail[editingIndex.value] = { ...editingDetail.value }
+  } else {
+    catData.detail.push({ ...editingDetail.value })
+  }
+  catData.total = catData.detail.reduce((sum, d) => sum + (d.value || 0), 0)
+  showModal.value = false
+  editingDetail.value = null
+  editingCategoryKey.value = null
+  editingIndex.value = -1
+}
+
+function kabupatenLabel(value: string | undefined): string {
+  if (!value) return ''
+  const found = kabupatenList.find((k) => k.value === value)
+  return found?.label ?? value
 }
 
 function removeDetail(category: 'satuan_pendidikan' | 'peserta_didik' | 'guru' | 'tendik', index: number): void {
   if (!statisticsData.value) return
   const catData = statisticsData.value.categories[category]
   catData.detail.splice(index, 1)
-  // Recalculate total
   catData.total = catData.detail.reduce((sum, d) => sum + (d.value || 0), 0)
 }
 </script>
@@ -139,92 +175,61 @@ function removeDetail(category: 'satuan_pendidikan' | 'peserta_didik' | 'guru' |
           </div>
         </template>
 
-        <div class="space-y-3">
-          <div
-            v-for="(detail, idx) in catData.detail"
-            :key="idx"
-            class="border border-gray-200 dark:border-gray-800 rounded-lg p-4 bg-default"
-          >
-            <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-7 items-end">
-              <UFormField label="Jenjang">
-                <UInput v-model="detail.jenjang" placeholder="mis. SMA" class="w-full" />
-              </UFormField>
-
-              <UFormField label="Jumlah">
-                <UInput
-                  v-model.number="detail.value"
-                  type="number"
-                  min="0"
-                  class="w-full"
-                />
-              </UFormField>
-
-              <template v-if="catKey === 'guru' || catKey === 'tendik'">
-                <UFormField label="PNS">
-                  <UInput
-                    v-model.number="detail.pns"
-                    type="number"
-                    min="0"
-                    class="w-full"
-                  />
-                </UFormField>
-                <UFormField label="Non-PNS">
-                  <UInput
-                    v-model.number="detail.non_pns"
-                    type="number"
-                    min="0"
-                    class="w-full"
-                  />
-                </UFormField>
-              </template>
-
-              <template v-else-if="catKey === 'peserta_didik'">
-                <UFormField label="Laki-laki">
-                  <UInput
-                    v-model.number="detail.laki"
-                    type="number"
-                    min="0"
-                    class="w-full"
-                  />
-                </UFormField>
-                <UFormField label="Perempuan">
-                  <UInput
-                    v-model.number="detail.perempuan"
-                    type="number"
-                    min="0"
-                    class="w-full"
-                  />
-                </UFormField>
-              </template>
-
-               <template v-if="catKey === 'satuan_pendidikan' || catKey === 'peserta_didik' || catKey === 'guru' || catKey === 'tendik'">
-                   <UFormField label="Kabupaten" class="col-span-2">
-                     <USelect
-                       v-model="detail.kabupaten"
-                       :items="kabupatenList"
-                       value-key="value"
-                       label-key="label"
-                       class="w-full"
-                     />
-                   </UFormField>
-                </template>
-
-                 <UButton
-                   class="lg:col-start-7 self-end w-fit"
-                   icon="i-lucide-trash-2"
-                   size="xs"
-                   square
-                   color="error"
-                   variant="soft"
-                   aria-label="Hapus"
-                   @click="removeDetail(catKey, idx)"
-                 />
-            </div>
-          </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="border-b text-left">
+                <th class="pb-2 font-medium">Jenjang</th>
+                <th class="pb-2 font-medium">Jumlah</th>
+                <th v-if="catKey === 'peserta_didik'" class="pb-2 font-medium">Laki-laki</th>
+                <th v-if="catKey === 'peserta_didik'" class="pb-2 font-medium">Perempuan</th>
+                <th v-if="catKey === 'guru' || catKey === 'tendik'" class="pb-2 font-medium">PNS</th>
+                <th v-if="catKey === 'guru' || catKey === 'tendik'" class="pb-2 font-medium">Non-PNS</th>
+                <th class="pb-2 font-medium">Kabupaten</th>
+                <th class="pb-2 font-medium text-right">Aksi</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr
+                v-for="(detail, idx) in catData.detail"
+                :key="idx"
+                class="border-b"
+              >
+                <td class="py-2">{{ detail.jenjang || '-' }}</td>
+                <td class="py-2">{{ detail.value || 0 }}</td>
+                <td v-if="catKey === 'peserta_didik'" class="py-2">{{ detail.laki || 0 }}</td>
+                <td v-if="catKey === 'peserta_didik'" class="py-2">{{ detail.perempuan || 0 }}</td>
+                <td v-if="catKey === 'guru' || catKey === 'tendik'" class="py-2">{{ detail.pns || 0 }}</td>
+                <td v-if="catKey === 'guru' || catKey === 'tendik'" class="py-2">{{ detail.non_pns || 0 }}</td>
+                <td class="py-2">{{ kabupatenLabel(detail.kabupaten) || '-' }}</td>
+                <td class="py-2">
+                  <div class="flex gap-1 justify-end">
+                    <UButton
+                      icon="i-lucide-edit-3"
+                      size="xs"
+                      variant="ghost"
+                      color="primary"
+                      aria-label="Ubah"
+                      @click="startEdit(catKey, detail, idx)"
+                    />
+                    <UButton
+                      icon="i-lucide-trash-2"
+                      size="xs"
+                      square
+                      color="error"
+                      variant="soft"
+                      aria-label="Hapus"
+                      @click="removeDetail(catKey, idx)"
+                    />
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
         </div>
 
         <div class="mt-4">
-          <UButton @click="addDetail(catKey)">
+          <UButton @click="startAdd(catKey)">
             <template #prepend>
               <i-lucide-plus class="size-4" />
             </template>
@@ -235,6 +240,63 @@ function removeDetail(category: 'satuan_pendidikan' | 'peserta_didik' | 'guru' |
     </template>
 
     <p v-else class="text-center text-muted py-8">Data belum tersedia.</p>
+
+    <UModal
+      v-model:open="showModal"
+      :title="editingIndex >= 0 ? 'Edit Data Statistik' : 'Tambah Data Statistik'"
+      :ui="{ content: 'w-[calc(100vw-2rem)] max-w-lg' }"
+      @close="editingDetail = null"
+    >
+      <template #body>
+        <div v-if="editingDetail && editingCategoryKey" class="space-y-3">
+          <UFormField label="Jenjang">
+            <UInput v-model="editingDetail.jenjang" placeholder="mis. SMA" class="w-full" />
+          </UFormField>
+
+          <UFormField label="Jumlah">
+            <UInput v-model.number="editingDetail.value" type="number" min="0" class="w-full" />
+          </UFormField>
+
+          <template v-if="editingCategoryKey === 'guru' || editingCategoryKey === 'tendik'">
+            <div class="grid gap-3 sm:grid-cols-2">
+              <UFormField label="PNS">
+                <UInput v-model.number="editingDetail.pns" type="number" min="0" class="w-full" />
+              </UFormField>
+              <UFormField label="Non-PNS">
+                <UInput v-model.number="editingDetail.non_pns" type="number" min="0" class="w-full" />
+              </UFormField>
+            </div>
+          </template>
+
+          <template v-else-if="editingCategoryKey === 'peserta_didik'">
+            <div class="grid gap-3 sm:grid-cols-2">
+              <UFormField label="Laki-laki">
+                <UInput v-model.number="editingDetail.laki" type="number" min="0" class="w-full" />
+              </UFormField>
+              <UFormField label="Perempuan">
+                <UInput v-model.number="editingDetail.perempuan" type="number" min="0" class="w-full" />
+              </UFormField>
+            </div>
+          </template>
+
+          <UFormField label="Kabupaten">
+            <USelect
+              v-model="editingDetail.kabupaten"
+              :items="kabupatenList"
+              value-key="value"
+              label-key="label"
+              class="w-full"
+            />
+          </UFormField>
+        </div>
+      </template>
+      <template #footer="{ close }">
+        <div class="flex gap-2 justify-end">
+          <UButton variant="ghost" color="neutral" @click="close">Batal</UButton>
+          <UButton color="primary" @click="saveDetail">Simpan</UButton>
+        </div>
+      </template>
+    </UModal>
 
     <div class="mt-6 flex justify-end">
       <UButton :loading="saving" @click="save">Simpan Semua Perubahan</UButton>
