@@ -8,6 +8,7 @@ dist
 # Env & secrets (JANGAN di-commit)
 .env
 dev.db*
+server/storage/
 uploads/*
 public/uploads/*
 

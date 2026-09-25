@@ -1,6 +1,21 @@
-import { readStatistics, writeStatistics, type StatisticsData } from '../../utils/statistics'
+import { writeStatistics, type StatisticsData, type StatisticsDetailItem } from '../../utils/statistics'
 import { requireAdmin } from '../../utils/auth'
 import { clean, readJsonBody } from '../../utils/validate'
+
+interface IncomingDetail {
+  jenjang?: unknown
+  value?: unknown
+  pns?: unknown
+  non_pns?: unknown
+  laki?: unknown
+  perempuan?: unknown
+  kabupaten?: unknown
+}
+
+interface IncomingCategory {
+  label?: unknown
+  detail?: IncomingDetail[]
+}
 
 // PUT /api/admin/statistics - Update full statistics data
 export default defineEventHandler(async (event) => {
@@ -46,7 +61,7 @@ export default defineEventHandler(async (event) => {
   const validCategories = ['satuan_pendidikan', 'peserta_didik', 'guru', 'tendik'] as const
 
   for (const cat of validCategories) {
-    const catData = (b.categories as Record<string, any>)[cat]
+    const catData = (b.categories as Record<string, IncomingCategory | undefined>)[cat]
     if (!catData) {
       continue
     }
@@ -59,7 +74,7 @@ export default defineEventHandler(async (event) => {
 
     // Calculate total from detail
     let total = 0
-    const details: any[] = []
+    const details: StatisticsDetailItem[] = []
 
     for (const d of catData.detail) {
       const value = Number(d.value)
@@ -69,7 +84,7 @@ export default defineEventHandler(async (event) => {
       total += value
 
       // Validate detail item based on category
-      const detailItem: any = { jenjang: clean(d.jenjang, 50) || '', value }
+      const detailItem: StatisticsDetailItem = { jenjang: clean(d.jenjang, 50) || '', value }
 
       if (cat === 'guru' || cat === 'tendik') {
         const pns = d.pns != null ? Number(d.pns) : 0

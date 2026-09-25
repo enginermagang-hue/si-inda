@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { api } from '~/composables/api'
 import { kabupatenList } from '~/data/kabupaten'
-import type { StatisticsData } from '~/../server/utils/statistics'
+import type { StatisticsData, StatisticsDetailItem } from '~/../server/utils/statistics'
 
 definePageMeta({ layout: 'admin', middleware: 'admin' })
 
@@ -10,7 +10,6 @@ const loading = ref(true)
 const error = ref<string | null>(null)
 const saving = ref(false)
 const activeCategory = ref<'satuan_pendidikan' | 'peserta_didik' | 'guru' | 'tendik'>('satuan_pendidikan')
-const period = ref('')
 const successMessage = ref('')
 
 const categories = [
@@ -20,13 +19,21 @@ const categories = [
   { value: 'tendik', label: 'Tenaga Kependidikan' },
 ]
 
+const periodModel = computed({
+  get: () => statisticsData.value?.period ?? '',
+  set: (val: string) => {
+    if (statisticsData.value) {
+      statisticsData.value.period = val
+    }
+  },
+})
+
 async function load(): Promise<void> {
   loading.value = true
   error.value = null
   try {
     const res = await api.get<{ data: StatisticsData }>('/admin/statistics')
     statisticsData.value = res.data
-    period.value = res.data.period
   } catch (e) {
     error.value = e instanceof Error ? e.message : 'Gagal memuat.'
   } finally {
@@ -48,7 +55,6 @@ async function save(): Promise<void> {
   try {
     const res = await api.put<{ data: StatisticsData; message: string }>('/admin/statistics', statisticsData.value)
     statisticsData.value = res.data
-    period.value = res.data.period
     successMessage.value = res.message || 'Data berhasil disimpan.'
     setTimeout(() => {
       successMessage.value = ''
@@ -60,27 +66,10 @@ async function save(): Promise<void> {
   }
 }
 
-function updateCategoryDetail(
-  category: 'satuan_pendidikan' | 'peserta_didik' | 'guru' | 'tendik',
-  index: number,
-  field: keyof any,
-  value: any,
-): void {
-  if (!statisticsData.value) return
-  const catData = statisticsData.value.categories[category]
-  const detail = catData.detail[index]
-  if (detail) {
-    // @ts-expect-error dynamic property access
-    detail[field] = value
-    // Recalculate total
-    catData.total = catData.detail.reduce((sum, d) => sum + (d.value || 0), 0)
-  }
-}
-
 function addDetail(category: 'satuan_pendidikan' | 'peserta_didik' | 'guru' | 'tendik'): void {
   if (!statisticsData.value) return
   const catData = statisticsData.value.categories[category]
-  const newDetail: any = { jenjang: '', value: 0, kabupaten: '' }
+  const newDetail: StatisticsDetailItem = { jenjang: '', value: 0, kabupaten: '' }
   if (category === 'guru' || category === 'tendik') {
     newDetail.pns = 0
     newDetail.non_pns = 0
@@ -118,7 +107,7 @@ function removeDetail(category: 'satuan_pendidikan' | 'peserta_didik' | 'guru' |
 
     <UCard class="mb-6">
       <UFormField label="Periode">
-        <UInput v-model="period" placeholder="mis. 2026/2027 Ganjil" class="w-full sm:w-1/2" />
+        <UInput v-model="periodModel" placeholder="mis. 2026/2027 Ganjil" class="w-full sm:w-1/2" />
       </UFormField>
     </UCard>
 
@@ -133,13 +122,13 @@ function removeDetail(category: 'satuan_pendidikan' | 'peserta_didik' | 'guru' |
       </UButton>
     </div>
 
-    <UCard v-if="statisticsData && loading" class="py-8 text-center">
+    <UCard v-if="loading" class="py-8 text-center">
       <UPSpinner />
       <p class="mt-2 text-sm text-muted">Memuat data...</p>
     </UCard>
 
     <template v-else-if="statisticsData">
-      <UCard v-for="(catData, catKey) in statisticsData.categories" :key="catKey" v-show="activeCategory === catKey" class="mb-6">
+      <UCard v-for="(catData, catKey) in statisticsData.categories" v-show="activeCategory === catKey" :key="catKey" class="mb-6">
         <template #header>
           <div class="flex items-center justify-between">
             <h2 class="text-xl font-bold">{{ catData.label }}</h2>
@@ -208,15 +197,15 @@ function removeDetail(category: 'satuan_pendidikan' | 'peserta_didik' | 'guru' |
               </template>
 
                <template v-if="catKey === 'satuan_pendidikan' || catKey === 'peserta_didik' || catKey === 'guru' || catKey === 'tendik'">
-                  <UFormField label="Kabupaten">
-                    <USelect
-                      :items="kabupatenList"
-                      value-key="value"
-                      label-key="label"
-                      v-model="detail.kabupaten"
-                      class="w-full"
-                    />
-                  </UFormField>
+                   <UFormField label="Kabupaten">
+                     <USelect
+                       v-model="detail.kabupaten"
+                       :items="kabupatenList"
+                       value-key="value"
+                       label-key="label"
+                       class="w-full"
+                     />
+                   </UFormField>
                 </template>
             </div>
 
