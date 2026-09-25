@@ -118,6 +118,37 @@ function kabupatenLabel(value: string | undefined): string {
   return found?.label ?? value
 }
 
+const isJumlahReadonly = computed(() => {
+  if (!editingCategoryKey.value) return false
+  return ['peserta_didik', 'guru', 'tendik'].includes(editingCategoryKey.value)
+})
+
+const calculatedValue = computed(() => {
+  if (!editingDetail.value || !editingCategoryKey.value) return 0
+  const d = editingDetail.value
+  if (editingCategoryKey.value === 'peserta_didik') {
+    return (d.laki || 0) + (d.perempuan || 0)
+  }
+  if (['guru', 'tendik'].includes(editingCategoryKey.value)) {
+    return (d.pns || 0) + (d.non_pns || 0)
+  }
+  return d.value || 0
+})
+
+watch(
+  [
+    () => editingDetail.value?.laki,
+    () => editingDetail.value?.perempuan,
+    () => editingDetail.value?.pns,
+    () => editingDetail.value?.non_pns,
+  ],
+  () => {
+    if (!editingDetail.value) return
+    editingDetail.value.value = calculatedValue.value
+  },
+  { immediate: true }
+)
+
 function removeDetail(category: 'satuan_pendidikan' | 'peserta_didik' | 'guru' | 'tendik', index: number): void {
   if (!statisticsData.value) return
   const catData = statisticsData.value.categories[category]
@@ -178,7 +209,7 @@ function removeDetail(category: 'satuan_pendidikan' | 'peserta_didik' | 'guru' |
         <div class="overflow-x-auto">
           <table class="w-full text-sm">
             <thead>
-              <tr class="border-b text-left">
+              <tr class="border-b border-gray-200 dark:border-gray-800 text-left">
                 <th class="pb-2 font-medium">Jenjang</th>
                 <th class="pb-2 font-medium">Jumlah</th>
                 <th v-if="catKey === 'peserta_didik'" class="pb-2 font-medium">Laki-laki</th>
@@ -193,7 +224,7 @@ function removeDetail(category: 'satuan_pendidikan' | 'peserta_didik' | 'guru' |
               <tr
                 v-for="(detail, idx) in catData.detail"
                 :key="idx"
-                class="border-b"
+                class="border-b border-gray-200 dark:border-gray-800"
               >
                 <td class="py-2">{{ detail.jenjang || '-' }}</td>
                 <td class="py-2">{{ detail.value || 0 }}</td>
@@ -254,7 +285,21 @@ function removeDetail(category: 'satuan_pendidikan' | 'peserta_didik' | 'guru' |
           </UFormField>
 
           <UFormField label="Jumlah">
-            <UInput v-model.number="editingDetail.value" type="number" min="0" class="w-full" />
+            <div class="relative">
+              <UInput
+                v-model.number="editingDetail.value"
+                :readonly="isJumlahReadonly"
+                type="number"
+                min="0"
+                class="w-full"
+              />
+              <UIcon
+                v-if="isJumlahReadonly"
+                name="i-lucide-info"
+                class="absolute right-2 top-1/2 -translate-y-1/2 size-4 text-muted"
+                title="Diitung otomatis dari penjumlahan"
+              />
+            </div>
           </UFormField>
 
           <template v-if="editingCategoryKey === 'guru' || editingCategoryKey === 'tendik'">
