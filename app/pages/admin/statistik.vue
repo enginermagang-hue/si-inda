@@ -284,24 +284,6 @@ function removeDetail(category: 'satuan_pendidikan' | 'peserta_didik' | 'guru' |
             <UInput v-model="editingDetail.jenjang" placeholder="mis. SMA" class="w-full" />
           </UFormField>
 
-          <UFormField label="Jumlah">
-            <div class="relative">
-              <UInput
-                v-model.number="editingDetail.value"
-                :readonly="isJumlahReadonly"
-                type="number"
-                min="0"
-                class="w-full"
-              />
-              <UIcon
-                v-if="isJumlahReadonly"
-                name="i-lucide-info"
-                class="absolute right-2 top-1/2 -translate-y-1/2 size-4 text-muted"
-                title="Diitung otomatis dari penjumlahan"
-              />
-            </div>
-          </UFormField>
-
           <template v-if="editingCategoryKey === 'guru' || editingCategoryKey === 'tendik'">
             <div class="grid gap-3 sm:grid-cols-2">
               <UFormField label="PNS">
@@ -323,6 +305,24 @@ function removeDetail(category: 'satuan_pendidikan' | 'peserta_didik' | 'guru' |
               </UFormField>
             </div>
           </template>
+
+          <UFormField label="Jumlah">
+            <div class="relative">
+              <UInput
+                v-model.number="editingDetail.value"
+                :readonly="isJumlahReadonly"
+                type="number"
+                min="0"
+                class="w-full"
+              />
+              <UIcon
+                v-if="isJumlahReadonly"
+                name="i-lucide-info"
+                class="absolute right-2 top-1/2 -translate-y-1/2 size-4 text-muted"
+                title="Diitung otomatis dari penjumlahan"
+              />
+            </div>
+          </UFormField>
 
           <UFormField label="Kabupaten">
             <USelect
