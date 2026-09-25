@@ -116,6 +116,7 @@ function removeDetail(category: 'satuan_pendidikan' | 'peserta_didik' | 'guru' |
         v-for="cat in categories"
         :key="cat.value"
         :color="activeCategory === cat.value ? 'primary' : 'neutral'"
+        :variant="activeCategory === cat.value ? 'solid' : 'subtle'"
         @click="activeCategory = cat.value as any"
       >
         {{ cat.label }}
@@ -144,7 +145,7 @@ function removeDetail(category: 'satuan_pendidikan' | 'peserta_didik' | 'guru' |
             :key="idx"
             class="border border-gray-200 dark:border-gray-800 rounded-lg p-4 bg-default"
           >
-            <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-7 items-end">
               <UFormField label="Jenjang">
                 <UInput v-model="detail.jenjang" placeholder="mis. SMA" class="w-full" />
               </UFormField>
@@ -197,7 +198,7 @@ function removeDetail(category: 'satuan_pendidikan' | 'peserta_didik' | 'guru' |
               </template>
 
                <template v-if="catKey === 'satuan_pendidikan' || catKey === 'peserta_didik' || catKey === 'guru' || catKey === 'tendik'">
-                   <UFormField label="Kabupaten">
+                   <UFormField label="Kabupaten" class="col-span-2">
                      <USelect
                        v-model="detail.kabupaten"
                        :items="kabupatenList"
@@ -207,12 +208,8 @@ function removeDetail(category: 'satuan_pendidikan' | 'peserta_didik' | 'guru' |
                      />
                    </UFormField>
                 </template>
-            </div>
 
-            <div class="mt-3 flex justify-end">
-              <UButton color="error" variant="soft" @click="removeDetail(catKey, idx)">
-                Hapus
-              </UButton>
+                 <UButton class="lg:col-start-7 self-end" color="error" variant="soft" @click="removeDetail(catKey, idx)">Hapus</UButton>
             </div>
           </div>
         </div>
