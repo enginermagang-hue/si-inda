@@ -12,7 +12,7 @@ const kabupatenOptions = computed(() => {
   const allSum = props.data.reduce((sum, d) => sum + (d.value || 0), 0)
   const items = [{ value: 'all', label: `Semua Kabupaten (${allSum})` }]
   for (const k of kabupatenList) {
-    const kabupatenData = props.data.filter((d) => d.kabupaten === k.label)
+    const kabupatenData = props.data.filter((d) => d.kabupaten === k.value)
     if (kabupatenData.length > 0) {
       const sum = kabupatenData.reduce((s, d) => s + (d.value || 0), 0)
       items.push({ value: k.value, label: `${k.label} (${sum})` })
@@ -25,7 +25,7 @@ const filteredData = computed(() => {
   if (selectedKabupaten.value === 'all') {
     return props.data
   }
-  return props.data.filter((d) => d.kabupaten === kabupatenList.find((k) => k.value === selectedKabupaten.value)?.label)
+  return props.data.filter((d) => d.kabupaten === kabupatenList.find((k) => k.value === selectedKabupaten.value)?.value)
 })
 
 const donutSeries = computed(() => {
