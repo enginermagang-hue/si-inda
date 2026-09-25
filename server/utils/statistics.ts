@@ -1,10 +1,5 @@
-import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs'
-import { join } from 'node:path'
-
-/** Path ke file statistics JSON (di server/storage, diluar public/ agar tidak accessible langsung via URL). */
-export function getStatisticsPath(): string {
-  return join(process.cwd(), 'server', 'storage', 'statistics.json')
-}
+import { useDb } from './db'
+import { settings } from '../db/schema'
 
 export interface StatisticsDetailItem {
   jenjang: string
@@ -28,32 +23,35 @@ export interface StatisticsData {
   categories: Record<'satuan_pendidikan' | 'peserta_didik' | 'guru' | 'tendik', StatisticsCategory>
 }
 
-/** Baca data statistics dari JSON file. */
-export function readStatistics(): StatisticsData {
-  const path = getStatisticsPath()
-  if (!existsSync(path)) {
-    // Return default data jika file belum ada
-    return getDefaultStatisticsData()
-  }
+/** Key settings untuk menyimpan data statistik sebagai JSON di tabel settings. */
+const STATISTICS_KEY = 'statistics_data'
+
+/** Baca data statistics dari database (tabel settings). Fallback ke default jika belum ada. */
+export async function readStatistics(): Promise<StatisticsData> {
   try {
-    const content = readFileSync(path, 'utf-8')
-    return JSON.parse(content) as StatisticsData
+    const row = await useDb().query.settings.findFirst({
+      where: (s, { eq }) => eq(s.key, STATISTICS_KEY),
+    })
+    if (!row) return getDefaultStatisticsData()
+    try {
+      return JSON.parse(row.value) as StatisticsData
+    } catch {
+      console.error('[Statistics] Error parsing JSON value:', row.value)
+      return getDefaultStatisticsData()
+    }
   } catch (e) {
-    console.error('[Statistics] Error reading file:', e)
+    console.error('[Statistics] Error reading from DB:', e)
     return getDefaultStatisticsData()
   }
 }
 
-/** Simpan data statistics ke JSON file. */
-export function writeStatistics(data: StatisticsData): void {
-  const path = getStatisticsPath()
-  // Pastikan direktori ada
-  const dir = join(process.cwd(), 'server', 'storage')
-  if (!existsSync(dir)) {
-    mkdirSync(dir, { recursive: true })
-  }
+/** Simpan data statistics ke database (tabel settings) via upsert. */
+export async function writeStatistics(data: StatisticsData): Promise<void> {
   const jsonStr = JSON.stringify(data, null, 2)
-  writeFileSync(path, jsonStr, 'utf-8')
+  await useDb()
+    .insert(settings)
+    .values({ key: STATISTICS_KEY, value: jsonStr })
+    .onConflictDoUpdate({ target: settings.key, set: { value: jsonStr } })
 }
 
 /** Return default statistics data untuk initial seed. */

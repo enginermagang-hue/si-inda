@@ -4,7 +4,7 @@ import { STAT_CATEGORIES } from '../utils/validate'
 // GET /api/statistics - Return public statistics data for display
 // Return data as array for backward compatibility with pages/index.vue
 export default defineEventHandler(async () => {
-  const data = readStatistics()
+  const data = await readStatistics()
   
   // Flatten categories into array format for backward compatibility
   const result: Statistic[] = []

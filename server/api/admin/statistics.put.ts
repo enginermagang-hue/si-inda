@@ -126,6 +126,6 @@ export default defineEventHandler(async (event) => {
     categories,
   }
 
-  writeStatistics(newData)
+  await writeStatistics(newData)
   return { data: newData, message: 'Data statistik berhasil diperbarui.' }
 })

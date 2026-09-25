@@ -4,6 +4,7 @@ import { drizzle } from 'drizzle-orm/libsql'
 import * as schema from '../server/db/schema'
 import { admins, breakingNews, breakingNewsImages, contentPages, settings } from '../server/db/schema'
 import { hashPassword } from '../server/utils/password'
+import { getDefaultStatisticsData } from '../server/utils/statistics'
 
 const tursoUrl = process.env.NUXT_TURSO_URL?.trim() || process.env.TURSO_URL?.trim()
 const tursoToken = process.env.NUXT_TURSO_AUTH_TOKEN?.trim() || process.env.TURSO_AUTH_TOKEN?.trim()
@@ -82,6 +83,7 @@ const seedSettings: Array<[string, string]> = [
 ]
 
 
+async function main() {
   const existingAdmin = await db.query.admins.findFirst()
   if (!existingAdmin) {
     await db.insert(admins).values({
@@ -99,6 +101,20 @@ const seedSettings: Array<[string, string]> = [
     await db.insert(settings).values({ key, value }).onConflictDoNothing()
   }
   console.log('Settings di-seed')
+
+  const existingStatistics = await db.query.settings.findFirst({
+    where: (s, { eq }) => eq(s.key, 'statistics_data'),
+  })
+  if (!existingStatistics) {
+    const defaultStatistics = getDefaultStatisticsData()
+    await db
+      .insert(settings)
+      .values({ key: 'statistics_data', value: JSON.stringify(defaultStatistics, null, 2) })
+      .onConflictDoNothing()
+    console.log('Statistics data di-seed')
+  } else {
+    console.log('Statistics data sudah ada — dilewati')
+  }
 
   if ((await db.query.contentPages.findMany()).length === 0) {
     await db.insert(contentPages).values(seedPages.map((p) => ({ ...p, isPublished: 1 })))
