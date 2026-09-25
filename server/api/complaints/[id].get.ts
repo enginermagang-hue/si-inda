@@ -12,7 +12,7 @@ export default defineEventHandler(async (event) => {
   }
   const row = await useDb().query.complaints.findFirst({
     where: eq(complaints.id, id),
-    columns: { id: true, sekolah: true, kategori: true, status: true, adminNote: true, createdAt: true, updatedAt: true },
+    columns: { id: true, sekolah: true, kategori: true, status: true, adminNote: true, filePath: true, createdAt: true, updatedAt: true },
   })
   if (!row) throw createError({ statusCode: 404, message: 'Pengaduan tidak ditemukan.' })
   return { data: row }

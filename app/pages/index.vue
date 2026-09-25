@@ -25,7 +25,7 @@ const heroLinks = ref<ButtonProps[]>([
 const { data: statsRes } = await useFetch<{ data: Statistic[] }>('/api/statistics', {
   default: () => ({ data: [] as Statistic[] }),
 })
-const stats = computed(() => statsRes.value.data)
+const stats = computed(() => (statsRes.value?.data || []) as Statistic[])
 const { data: newsRes } = await useFetch<{ data: NewsItem[] }>('/api/breaking-news', {
   default: () => ({ data: [] as NewsItem[] }),
 })

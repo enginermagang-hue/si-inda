@@ -35,24 +35,7 @@ export const contentPages = sqliteTable('content_pages', {
   updatedAt: text('updated_at').notNull().$defaultFn(now),
 })
 
-/**
- * Angka Statistik Dapodik (input manual admin per periode).
- * category: 'satuan_pendidikan' | 'peserta_didik' | 'guru' | 'tendik'
- * Hanya baris isCurrent=1 yang tampil di publik.
- */
-export const statistics = sqliteTable('statistics', {
-  id: integer('id').primaryKey({ autoIncrement: true }),
-  category: text('category').notNull(),
-  /** Opsional, mis. SD/SMP/SMA. NULL = angka total. */
-  jenjang: text('jenjang'),
-  label: text('label').notNull(),
-  value: integer('value').notNull().default(0),
-  period: text('period').notNull(),
-  isCurrent: integer('is_current').notNull().default(0),
-  updatedAt: text('updated_at').notNull().$defaultFn(now),
-})
 
-/** Surat Informasi Dapodik (metadata + file PDF). */
 export const letters = sqliteTable('letters', {
   id: integer('id').primaryKey({ autoIncrement: true }),
   nomorSurat: text('nomor_surat').notNull(),
@@ -145,6 +128,10 @@ export const complaints = sqliteTable('complaints', {
   sekolah: text('sekolah').notNull().default(''),
   status: text('status').notNull().default('baru'),
   adminNote: text('admin_note'),
+  /** URL publik lampiran: path relatif lokal (uploads/...) atau URL Dropbox. */
+  filePath: text('file_path'),
+  /** Path internal Dropbox untuk hapus (NULL untuk driver lokal). */
+  dropboxPath: text('dropbox_path'),
   createdAt: text('created_at').notNull().$defaultFn(now),
   updatedAt: text('updated_at').notNull().$defaultFn(now),
 })

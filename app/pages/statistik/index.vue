@@ -1,74 +1,87 @@
 <script setup lang="ts">
-import { STAT_META, type Statistic } from '~/composables/api'
 import { STAT_CATEGORIES } from '~/../server/utils/validate'
+import { STAT_META } from '~/composables/api'
 
-const { data: res, error } = await useFetch<{ data: Statistic[] }>('/api/statistics', {
-  default: () => ({ data: [] as Statistic[] }),
+const { data: res, error, refresh } = await useFetch<{ data: any[]; categories: string[]; period: string; updated_at: string }>('/api/statistics', {
+  default: () => ({ data: [], categories: [], period: '-', updated_at: '' }),
 })
 
-const rows = computed(() => res.value.data)
+const statisticsData = computed(() => res.value?.data || [])
+const period = computed(() => res.value?.period || '-')
 
-function rowsFor(cat: Statistic['category']): Statistic[] {
-  return rows.value.filter((r) => r.category === cat)
+function getCategoryData(category: typeof STAT_CATEGORIES[number]): any[] {
+  return statisticsData.value.filter((d) => d.category === category && d.jenjang !== null)
 }
 
-function totalFor(cat: Statistic['category']): number {
-  return rowsFor(cat).reduce((s, r) => s + r.value, 0)
-}
-
-function periodFor(cat: Statistic['category']): string {
-  return rowsFor(cat)[0]?.period ?? '-'
+function getCategoryTotal(category: typeof STAT_CATEGORIES[number]): number {
+  const totalRow = statisticsData.value.find((d) => d.category === category && d.jenjang === null)
+  if (totalRow) return totalRow.value || 0
+  return getCategoryData(category).reduce((sum, d) => sum + (d.value || 0), 0)
 }
 
 function formatNum(n: number): string {
   return n.toLocaleString('id-ID')
 }
+
+// Refresh on mount and when navigating back
+onMounted(() => {
+  refresh()
+})
 </script>
 
 <template>
   <div>
     <p class="text-sm text-muted">Statistik Dapodik</p>
     <h1 class="mt-1 text-2xl font-bold tracking-tight sm:text-3xl">Statistik Dapodik</h1>
-    <p class="mt-1 text-sm text-muted">Rekap angka Dapodik periode aktif per kategori.</p>
+    <p class="mt-1 text-sm text-muted">Rekap angka Dapodik periode {{ period }} per kategori.</p>
+    <p v-if="res?.updated_at" class="mt-1 text-xs text-muted">
+      Data terakhir diupdate: {{ new Date(res.updated_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) }}
+    </p>
 
     <UAlert v-if="error" color="error" variant="soft" title="Gagal memuat data." class="mt-6" />
 
     <template v-else>
-      <p v-if="!rows.length" class="mt-6 rounded-xl border border-default bg-default p-6 text-sm text-muted">
-        Data periode aktif belum diisi admin.
+      <p v-if="!Object.keys(statisticsData).length" class="mt-6 rounded-xl border border-default bg-default p-6 text-sm text-muted">
+        Data periode belum diisi admin.
       </p>
 
-      <div v-else class="mt-6 space-y-8">
-        <section v-for="cat in STAT_CATEGORIES" :key="cat">
-          <h2 class="text-lg font-bold tracking-tight">{{ STAT_META[cat].title }}</h2>
-          <p class="mt-1 text-sm text-muted">{{ STAT_META[cat].subtitle }} — periode {{ periodFor(cat) }}.</p>
-
-          <UCard class="mt-3 bg-primary text-white" variant="solid">
-            <p class="text-sm opacity-80">Total {{ STAT_META[cat].title }}</p>
-            <p class="mt-1 text-4xl font-bold tracking-tight sm:text-5xl">{{ formatNum(totalFor(cat)) }}</p>
-            <p class="mt-1 text-sm opacity-80">Periode {{ periodFor(cat) }}</p>
-          </UCard>
-
-          <template v-if="rowsFor(cat).length">
-            <UTable
-              v-if="rowsFor(cat).length > 1 || (rowsFor(cat).length === 1 && rowsFor(cat)[0]?.jenjang)"
-              :data="rowsFor(cat)"
-              :columns="[
-                { accessorKey: 'label', header: 'Rincian' },
-                ...(rowsFor(cat).some((r) => r.jenjang) ? [{ accessorKey: 'jenjang', header: 'Jenjang' }] : []),
-                { accessorKey: 'value', header: 'Jumlah' },
-              ]"
-              class="mt-4"
-            >
-              <template #value-cell="{ row }">
-                <span class="font-bold text-primary">{{ formatNum(row.original.value) }}</span>
-              </template>
-            </UTable>
+      <div v-else class="mt-6 grid gap-6 grid-cols-1 lg:grid-cols-2">
+        <UCard
+          v-for="cat in STAT_CATEGORIES"
+          :key="cat"
+          class="flex flex-col"
+        >
+          <template #header>
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div>
+                <h3 class="text-lg font-bold">{{ STAT_META[cat].title }}</h3>
+                <p class="mt-1 text-sm text-muted">{{ STAT_META[cat].subtitle }} — periode {{ period }}.</p>
+              </div>
+              <div class="text-right">
+                <p class="text-sm text-muted">Total</p>
+                <p class="text-2xl font-bold text-primary">
+                  {{ formatNum(getCategoryTotal(cat)) }}
+                </p>
+              </div>
+            </div>
           </template>
-          <p v-else class="mt-4 rounded-xl border border-default bg-default p-4 text-sm text-muted">
+
+          <GuruDonutChart
+            v-if="cat === 'guru'"
+            :data="getCategoryData(cat)"
+          />
+
+          <StatisticsChart
+            v-else-if="getCategoryData(cat).length > 0"
+            :category="cat"
+            :data="getCategoryData(cat)"
+            class="flex-1"
+          />
+
+          <p v-else class="py-8 text-center text-muted">
             Data {{ STAT_META[cat].title }} belum tersedia.
           </p>
-        </section>
+        </UCard>
       </div>
     </template>
   </div>

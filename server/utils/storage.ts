@@ -24,6 +24,7 @@ export const DROPBOX_FOLDERS = {
   SURAT: 'surat',
   SOP: 'sop',
   GAMBAR: 'gambar',
+  PENGADUAN: 'pengaduan',
 } as const
 
 export type DropboxFolderKey = keyof typeof DROPBOX_FOLDERS

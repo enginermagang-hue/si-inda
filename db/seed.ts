@@ -2,7 +2,7 @@ import 'dotenv/config'
 import { createClient } from '@libsql/client'
 import { drizzle } from 'drizzle-orm/libsql'
 import * as schema from '../server/db/schema'
-import { admins, breakingNews, breakingNewsImages, contentPages, settings, statistics } from '../server/db/schema'
+import { admins, breakingNews, breakingNewsImages, contentPages, settings } from '../server/db/schema'
 import { hashPassword } from '../server/utils/password'
 
 const tursoUrl = process.env.NUXT_TURSO_URL?.trim() || process.env.TURSO_URL?.trim()
@@ -81,14 +81,7 @@ const seedSettings: Array<[string, string]> = [
   ['footer_text', 'Dinas Pendidikan — Bidang Pendataan Dapodik'],
 ]
 
-const seedStatistics = [
-  { category: 'satuan_pendidikan', jenjang: null, label: 'Jumlah Satuan Pendidikan', value: 0, period: '2026/2027 Ganjil', isCurrent: 1 },
-  { category: 'peserta_didik', jenjang: null, label: 'Jumlah Peserta Didik', value: 0, period: '2026/2027 Ganjil', isCurrent: 1 },
-  { category: 'guru', jenjang: null, label: 'Jumlah Guru', value: 0, period: '2026/2027 Ganjil', isCurrent: 1 },
-  { category: 'tendik', jenjang: null, label: 'Jumlah Tenaga Kependidikan', value: 0, period: '2026/2027 Ganjil', isCurrent: 1 },
-]
 
-async function main(): Promise<void> {
   const existingAdmin = await db.query.admins.findFirst()
   if (!existingAdmin) {
     await db.insert(admins).values({
@@ -114,12 +107,6 @@ async function main(): Promise<void> {
     console.log('Halaman konten sudah ada — dilewati')
   }
 
-  if ((await db.query.statistics.findMany()).length === 0) {
-    await db.insert(statistics).values(seedStatistics)
-    console.log(`${seedStatistics.length} baris statistik awal di-seed (nilai 0, silakan isi via panel admin)`)
-  } else {
-    console.log('Statistik sudah ada — dilewati')
-  }
 
   if ((await db.query.breakingNews.findMany()).length === 0) {
     const [news] = await db

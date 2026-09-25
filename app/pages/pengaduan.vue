@@ -7,9 +7,11 @@ const kontak = ref('')
 const sekolah = ref('')
 const kategori = ref('Lainnya')
 const isi = ref('')
+const file = ref<File | null>(null)
 const sending = ref(false)
 const error = ref('')
 const ticket = ref<number | null>(null)
+const submittedFilePath = ref<string | null>(null)
 
 // --- Lacak status ---
 const trackId = ref('')
@@ -69,14 +71,18 @@ async function submit(): Promise<void> {
   }
   sending.value = true
   try {
-    const res = await api.post<{ message: string; ticket: number }>('/complaints', {
-       nama: nama.value.trim(),
-      kontak: kontak.value.trim(),
-      sekolah: sekolah.value.trim(),
-      kategori: kategori.value,
-      isi: isi.value.trim(),
-    })
+    const form = new FormData()
+    form.append('nama', nama.value.trim())
+    form.append('kontak', kontak.value.trim())
+    form.append('sekolah', sekolah.value.trim())
+    form.append('kategori', kategori.value)
+    form.append('isi', isi.value.trim())
+    if (file.value) {
+      form.append('file', file.value)
+    }
+    const res = await api.postForm<{ message: string; ticket: number }>('/complaints', form)
     ticket.value = res.ticket
+    submittedFilePath.value = null
   } catch (e) {
     error.value = e instanceof Error ? e.message : 'Gagal mengirim pengaduan.'
   } finally {
@@ -86,11 +92,19 @@ async function submit(): Promise<void> {
 
 function reset(): void {
   ticket.value = null
+  submittedFilePath.value = null
   nama.value = ''
   kontak.value = ''
   kategori.value = 'Lainnya'
   isi.value = ''
   sekolah.value = ''
+  file.value = null
+}
+
+function formatFileSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
 }
 </script>
 
@@ -147,7 +161,20 @@ function reset(): void {
           <p class="text-xs font-medium uppercase text-muted">Catatan admin</p>
           <p class="mt-1 whitespace-pre-wrap text-sm">{{ result.adminNote }}</p>
         </div>
-        <p v-else class="mt-3 text-xs text-muted">Belum ada catatan dari admin.</p>
+        <div v-else class="mt-3 rounded-lg bg-muted p-3">
+          <p class="text-xs text-muted">Belum ada catatan dari admin.</p>
+        </div>
+        <div v-if="result.filePath" class="mt-4">
+          <a
+            :href="result.filePath.startsWith('uploads/') ? '/' + result.filePath : result.filePath"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="inline-flex items-center gap-2 text-sm font-medium text-primary hover:underline"
+          >
+            <span class="i-lucide-download"></span>
+            Unduh lampiran
+          </a>
+        </div>
       </UCard>
     </div>
 
@@ -184,6 +211,16 @@ function reset(): void {
           placeholder="Jelaskan kendala selengkap mungkin…"
           class="w-full"
         />
+      </UFormField>
+      <UFormField label="Lampiran (opsional)" name="file" help="PDF maksimal 10 MB.">
+        <UInput
+          type="file"
+          accept="application/pdf"
+          @change="(e: Event) => { file = (e.target as HTMLInputElement).files?.[0] ?? null }"
+        />
+        <p v-if="file" class="mt-1 text-xs text-muted">
+          {{ file.name }} — {{ formatFileSize(file.size) }}
+        </p>
       </UFormField>
       <UAlert v-if="error" color="error" variant="soft" :title="error" />
       <UButton type="submit" :loading="sending" block>Kirim Pengaduan</UButton>

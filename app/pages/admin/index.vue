@@ -9,7 +9,7 @@ const loading = ref(true)
 onMounted(async () => {
   try {
     const [s, p, l, li, n, c, v] = await Promise.all([
-      api.get<{ data: unknown[] }>('/admin/statistics'),
+      api.get<{ data: { categories: Record<string, { detail: any[] }> } }>('/admin/statistics'),
       api.get<{ data: unknown[] }>('/admin/pages'),
       api.get<{ data: unknown[] }>('/admin/letters'),
       api.get<{ data: unknown[] }>('/admin/links'),
@@ -18,7 +18,7 @@ onMounted(async () => {
       api.get<{ data: { total: number; today: number } }>('/admin/visits/stats?range=all').catch(() => ({ data: { total: 0, today: 0 } })),
     ])
     counts.value = {
-      statistik: s.data.length,
+      statistik: Object.values(s.data.categories || {}).reduce((sum: number, cat: any) => sum + (cat.detail?.length || 0), 0),
       halaman: p.data.length,
       surat: l.data.length,
       link: li.data.length,

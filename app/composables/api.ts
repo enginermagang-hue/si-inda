@@ -60,6 +60,11 @@ export interface Statistic {
   period: string
   isCurrent: number
   updatedAt: string
+  kabupaten?: string
+  pns?: number
+  non_pns?: number
+  laki?: number
+  perempuan?: number
 }
 
 export interface ContentPage {
@@ -152,6 +157,8 @@ export interface Complaint {
   isi: string
   status: 'baru' | 'diproses' | 'selesai'
   adminNote: string | null
+  filePath: string | null
+  dropboxPath: string | null
   createdAt: string
   updatedAt: string
 }
@@ -162,6 +169,7 @@ export interface ComplaintStatus {
   kategori: string
   status: 'baru' | 'diproses' | 'selesai'
   adminNote: string | null
+  filePath: string | null
   createdAt: string
   updatedAt: string
 }

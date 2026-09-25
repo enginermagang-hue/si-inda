@@ -149,6 +149,17 @@ function fmt(iso: string): string {
           <UButton variant="link" color="error" @click="remove(selected.id)">Hapus</UButton>
         </div>
         <p class="mt-3 whitespace-pre-wrap rounded-lg bg-muted p-3 text-sm">{{ selected.isi }}</p>
+        <div v-if="selected.filePath" class="mt-3">
+          <a
+            :href="selected.filePath.startsWith('uploads/') ? '/' + selected.filePath : selected.filePath"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="inline-flex items-center gap-2 text-sm font-medium text-primary hover:underline"
+          >
+            <span class="i-lucide-download"></span>
+            Unduh lampiran
+          </a>
+        </div>
         <div class="mt-4 grid gap-3">
           <UFormField label="Status">
             <USelect

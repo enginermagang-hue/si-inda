@@ -1,13 +1,9 @@
-import { asc, desc } from 'drizzle-orm'
-import { useDb } from '../../utils/db'
-import { statistics } from '../../db/schema'
+import { readStatistics } from '../../utils/statistics'
 import { requireAdmin } from '../../utils/auth'
 
-// GET /api/admin/statistics
+// GET /api/admin/statistics - Return full statistics data for admin edit
 export default defineEventHandler(async (event) => {
   await requireAdmin(event)
-  const rows = await useDb().query.statistics.findMany({
-    orderBy: [asc(statistics.category), desc(statistics.id)],
-  })
-  return { data: rows }
+  const data = readStatistics()
+  return { data }
 })

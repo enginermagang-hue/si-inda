@@ -1,21 +1,32 @@
 <script setup lang="ts">
-import { api, STAT_META, type Statistic } from '~/composables/api'
+import { api } from '~/composables/api'
+import { kabupatenList } from '~/data/kabupaten'
+import type { StatisticsData } from '~/../server/utils/statistics'
 
 definePageMeta({ layout: 'admin', middleware: 'admin' })
 
-const rows = ref<Statistic[]>([])
+const statisticsData = ref<StatisticsData | null>(null)
 const loading = ref(true)
-const error = ref('')
-const editing = ref<(Omit<Partial<Statistic>, 'jenjang'> & { id?: number; jenjang?: string }) | null>(null)
+const error = ref<string | null>(null)
 const saving = ref(false)
+const activeCategory = ref<'satuan_pendidikan' | 'peserta_didik' | 'guru' | 'tendik'>('satuan_pendidikan')
+const period = ref('')
+const successMessage = ref('')
 
-const categories = Object.entries(STAT_META).map(([value, meta]) => ({ value, label: meta.title }))
+const categories = [
+  { value: 'satuan_pendidikan', label: 'Satuan Pendidikan' },
+  { value: 'peserta_didik', label: 'Peserta Didik' },
+  { value: 'guru', label: 'Guru' },
+  { value: 'tendik', label: 'Tenaga Kependidikan' },
+]
 
 async function load(): Promise<void> {
   loading.value = true
+  error.value = null
   try {
-    const res = await api.get<{ data: Statistic[] }>('/admin/statistics')
-    rows.value = res.data
+    const res = await api.get<{ data: StatisticsData }>('/admin/statistics')
+    statisticsData.value = res.data
+    period.value = res.data.period
   } catch (e) {
     error.value = e instanceof Error ? e.message : 'Gagal memuat.'
   } finally {
@@ -25,40 +36,23 @@ async function load(): Promise<void> {
 
 onMounted(load)
 
-function catLabel(cat: string): string {
-  return categories.find((c) => c.value === cat)?.label ?? cat
-}
-
-function startAdd(): void {
-  editing.value = { category: 'satuan_pendidikan', label: '', jenjang: '', value: 0, period: '', isCurrent: 1 }
-}
-
-function startEdit(row: Statistic): void {
-  editing.value = { ...row, jenjang: row.jenjang ?? '' }
+function getCategoryTotal(category: 'satuan_pendidikan' | 'peserta_didik' | 'guru' | 'tendik'): number {
+  if (!statisticsData.value) return 0
+  return statisticsData.value.categories[category].detail.reduce((sum, d) => sum + (d.value || 0), 0)
 }
 
 async function save(): Promise<void> {
-  if (!editing.value) return
-  error.value = ''
-  const f = editing.value
-  if (!f.label?.trim() || !f.period?.trim()) {
-    error.value = 'Label dan periode wajib diisi.'
-    return
-  }
+  if (!statisticsData.value) return
   saving.value = true
+  error.value = null
   try {
-    const payload = {
-      category: f.category,
-      label: f.label.trim(),
-      jenjang: f.jenjang?.trim() ? f.jenjang.trim() : null,
-      value: Number(f.value) || 0,
-      period: f.period.trim(),
-      isCurrent: f.isCurrent ? 1 : 0,
-    }
-    if (f.id) await api.put(`/admin/statistics/${f.id}`, payload)
-    else await api.post('/admin/statistics', payload)
-    editing.value = null
-    await load()
+    const res = await api.put<{ data: StatisticsData; message: string }>('/admin/statistics', statisticsData.value)
+    statisticsData.value = res.data
+    period.value = res.data.period
+    successMessage.value = res.message || 'Data berhasil disimpan.'
+    setTimeout(() => {
+      successMessage.value = ''
+    }, 3000)
   } catch (e) {
     error.value = e instanceof Error ? e.message : 'Gagal menyimpan.'
   } finally {
@@ -66,70 +60,189 @@ async function save(): Promise<void> {
   }
 }
 
-async function remove(id: number): Promise<void> {
-  if (!confirm('Hapus baris statistik ini?')) return
-  await api.del(`/admin/statistics/${id}`)
-  await load()
+function updateCategoryDetail(
+  category: 'satuan_pendidikan' | 'peserta_didik' | 'guru' | 'tendik',
+  index: number,
+  field: keyof any,
+  value: any,
+): void {
+  if (!statisticsData.value) return
+  const catData = statisticsData.value.categories[category]
+  const detail = catData.detail[index]
+  if (detail) {
+    // @ts-expect-error dynamic property access
+    detail[field] = value
+    // Recalculate total
+    catData.total = catData.detail.reduce((sum, d) => sum + (d.value || 0), 0)
+  }
+}
+
+function addDetail(category: 'satuan_pendidikan' | 'peserta_didik' | 'guru' | 'tendik'): void {
+  if (!statisticsData.value) return
+  const catData = statisticsData.value.categories[category]
+  const newDetail: any = { jenjang: '', value: 0, kabupaten: '' }
+  if (category === 'guru' || category === 'tendik') {
+    newDetail.pns = 0
+    newDetail.non_pns = 0
+  }
+  if (category === 'peserta_didik') {
+    newDetail.laki = 0
+    newDetail.perempuan = 0
+  }
+  catData.detail.push(newDetail)
+}
+
+function removeDetail(category: 'satuan_pendidikan' | 'peserta_didik' | 'guru' | 'tendik', index: number): void {
+  if (!statisticsData.value) return
+  const catData = statisticsData.value.categories[category]
+  catData.detail.splice(index, 1)
+  // Recalculate total
+  catData.total = catData.detail.reduce((sum, d) => sum + (d.value || 0), 0)
 }
 </script>
 
 <template>
   <div>
-    <div class="flex flex-wrap items-center justify-between gap-3">
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
       <div>
         <h1 class="text-2xl font-bold tracking-tight">Kelola Statistik</h1>
-        <p class="mt-1 text-sm text-muted">Input manual angka Dapodik per periode. Tanda "Aktif" tampil di publik.</p>
+        <p class="mt-1 text-sm text-muted">Edit data statistik Dapodik per kategori dan jenjang.</p>
       </div>
-      <UButton icon="i-lucide-plus" class="shrink-0" @click="startAdd">Tambah</UButton>
+      <UButton v-if="successMessage" :color="successMessage ? 'success' : 'primary'" :loading="saving" @click="save">
+        {{ successMessage ? 'Disimpan' : 'Simpan' }}
+      </UButton>
     </div>
 
-    <UAlert v-if="error" color="error" variant="soft" :title="error" class="mt-4" />
+    <UAlert v-if="error" color="error" variant="soft" :title="error" class="mb-4" />
+    <UAlert v-if="successMessage" color="success" variant="soft" :title="successMessage" class="mb-4" />
 
-    <UCard v-if="editing" class="mt-4">
-      <div class="grid gap-3 sm:grid-cols-2">
-        <UFormField label="Kategori">
-          <USelect v-model="editing.category" :items="categories" value-key="value" label-key="label" class="w-full" />
-        </UFormField>
-        <UFormField label="Label">
-          <UInput v-model="editing.label" placeholder="mis. Jumlah Satuan Pendidikan" class="w-full" />
-        </UFormField>
-        <UFormField label="Jenjang (opsional, kosongkan = total)">
-          <UInput v-model="editing.jenjang" placeholder="mis. SD / SMP" class="w-full" />
-        </UFormField>
-        <UFormField label="Nilai">
-          <UInput v-model.number="editing.value" type="number" min="0" step="1" class="w-full" />
-        </UFormField>
-        <UFormField label="Periode">
-          <UInput v-model="editing.period" placeholder="mis. 2026/2027 Ganjil" class="w-full" />
-        </UFormField>
-        <div class="flex items-end pb-2">
-          <UCheckbox v-model="editing.isCurrent" :true-value="1" :false-value="0" label="Aktif (tampil di publik)" />
-        </div>
-      </div>
-      <div class="mt-3 flex gap-2">
-        <UButton :loading="saving" @click="save">Simpan</UButton>
-        <UButton variant="ghost" color="neutral" @click="editing = null">Batal</UButton>
-      </div>
+    <UCard class="mb-6">
+      <UFormField label="Periode">
+        <UInput v-model="period" placeholder="mis. 2026/2027 Ganjil" class="w-full sm:w-1/2" />
+      </UFormField>
     </UCard>
 
-    <p v-if="loading" class="mt-4 text-sm text-muted">Memuat…</p>
-    <div v-else class="mt-4 space-y-2">
-      <UCard v-for="row in rows" :key="row.id">
-        <div class="flex items-start justify-between gap-3">
-          <div class="min-w-0">
-            <p class="font-medium">{{ row.label }}{{ row.jenjang ? ` (${row.jenjang})` : '' }}</p>
-            <p class="mt-0.5 text-xs text-muted">
-              {{ catLabel(row.category) }} • {{ row.period }} • <span class="font-bold text-highlighted">{{ row.value.toLocaleString('id-ID') }}</span>
-            </p>
+    <div class="flex flex-wrap gap-2 mb-6">
+      <UButton
+        v-for="cat in categories"
+        :key="cat.value"
+        :color="activeCategory === cat.value ? 'primary' : 'neutral'"
+        @click="activeCategory = cat.value as any"
+      >
+        {{ cat.label }}
+      </UButton>
+    </div>
+
+    <UCard v-if="statisticsData && loading" class="py-8 text-center">
+      <UPSpinner />
+      <p class="mt-2 text-sm text-muted">Memuat data...</p>
+    </UCard>
+
+    <template v-else-if="statisticsData">
+      <UCard v-for="(catData, catKey) in statisticsData.categories" :key="catKey" v-show="activeCategory === catKey" class="mb-6">
+        <template #header>
+          <div class="flex items-center justify-between">
+            <h2 class="text-xl font-bold">{{ catData.label }}</h2>
+            <span class="text-lg font-bold text-primary">
+              Total: {{ getCategoryTotal(catKey).toLocaleString('id-ID') }}
+            </span>
           </div>
-          <UBadge v-if="row.isCurrent" color="success" variant="soft" class="shrink-0">Aktif</UBadge>
-          <UBadge v-else color="neutral" variant="soft" class="shrink-0">Arsip</UBadge>
+        </template>
+
+        <div class="space-y-3">
+          <div
+            v-for="(detail, idx) in catData.detail"
+            :key="idx"
+            class="border rounded-lg p-4 bg-default"
+          >
+            <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              <UFormField label="Jenjang">
+                <UInput v-model="detail.jenjang" placeholder="mis. SMA" class="w-full" />
+              </UFormField>
+
+              <UFormField label="Jumlah">
+                <UInput
+                  v-model.number="detail.value"
+                  type="number"
+                  min="0"
+                  class="w-full"
+                />
+              </UFormField>
+
+              <template v-if="catKey === 'guru' || catKey === 'tendik'">
+                <UFormField label="PNS">
+                  <UInput
+                    v-model.number="detail.pns"
+                    type="number"
+                    min="0"
+                    class="w-full"
+                  />
+                </UFormField>
+                <UFormField label="Non-PNS">
+                  <UInput
+                    v-model.number="detail.non_pns"
+                    type="number"
+                    min="0"
+                    class="w-full"
+                  />
+                </UFormField>
+              </template>
+
+              <template v-else-if="catKey === 'peserta_didik'">
+                <UFormField label="Laki-laki">
+                  <UInput
+                    v-model.number="detail.laki"
+                    type="number"
+                    min="0"
+                    class="w-full"
+                  />
+                </UFormField>
+                <UFormField label="Perempuan">
+                  <UInput
+                    v-model.number="detail.perempuan"
+                    type="number"
+                    min="0"
+                    class="w-full"
+                  />
+                </UFormField>
+              </template>
+
+               <template v-if="catKey === 'satuan_pendidikan' || catKey === 'peserta_didik' || catKey === 'guru' || catKey === 'tendik'">
+                  <UFormField label="Kabupaten">
+                    <USelect
+                      :items="kabupatenList"
+                      value-key="value"
+                      label-key="label"
+                      v-model="detail.kabupaten"
+                      class="w-full"
+                    />
+                  </UFormField>
+                </template>
+            </div>
+
+            <div class="mt-3 flex justify-end">
+              <UButton color="error" variant="soft" @click="removeDetail(catKey, idx)">
+                Hapus
+              </UButton>
+            </div>
+          </div>
         </div>
-        <div class="mt-2 flex gap-1 border-t border-default pt-2">
-          <UButton variant="link" color="primary" class="px-0" @click="startEdit(row)">Ubah</UButton>
-          <UButton variant="link" color="error" @click="remove(row.id)">Hapus</UButton>
+
+        <div class="mt-4">
+          <UButton @click="addDetail(catKey)">
+            <template #prepend>
+              <i-lucide-plus class="size-4" />
+            </template>
+            Tambah Rincian
+          </UButton>
         </div>
       </UCard>
+    </template>
+
+    <p v-else class="text-center text-muted py-8">Data belum tersedia.</p>
+
+    <div class="mt-6 flex justify-end">
+      <UButton :loading="saving" @click="save">Simpan Semua Perubahan</UButton>
     </div>
   </div>
 </template>

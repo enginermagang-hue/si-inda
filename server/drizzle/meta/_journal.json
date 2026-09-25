@@ -57,6 +57,20 @@
       "when": 1790232571744,
       "tag": "0007_loud_wendell_rand",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "6",
+      "when": 1790300286110,
+      "tag": "0008_misty_lady_bullseye",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "6",
+      "when": 1790309908799,
+      "tag": "0009_tense_spirit",
+      "breakpoints": true
     }
   ]
 }
