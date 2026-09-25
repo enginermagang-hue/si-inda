@@ -209,7 +209,16 @@ function removeDetail(category: 'satuan_pendidikan' | 'peserta_didik' | 'guru' |
                    </UFormField>
                 </template>
 
-                 <UButton class="lg:col-start-7 self-end" color="error" variant="soft" @click="removeDetail(catKey, idx)">Hapus</UButton>
+                 <UButton
+                   class="lg:col-start-7 self-end w-fit"
+                   icon="i-lucide-trash-2"
+                   size="xs"
+                   square
+                   color="error"
+                   variant="soft"
+                   aria-label="Hapus"
+                   @click="removeDetail(catKey, idx)"
+                 />
             </div>
           </div>
         </div>
