@@ -325,11 +325,13 @@ function removeDetail(category: 'satuan_pendidikan' | 'peserta_didik' | 'guru' |
           </UFormField>
 
           <UFormField label="Kabupaten">
-            <USelect
+            <USelectMenu
               v-model="editingDetail.kabupaten"
               :items="kabupatenList"
               value-key="value"
               label-key="label"
+              :search-input="{ placeholder: 'Cari kabupaten...' }"
+              clear
               class="w-full"
             />
           </UFormField>
