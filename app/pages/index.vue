@@ -63,7 +63,10 @@ const services = [
       <img
         src="/hero.jpg"
         alt="Ilustrasi pendataan Dapodik"
-        class="rounded-lg shadow-2xl ring ring-default w-full object-cover aspect-[4/3] lg:aspect-[16/10]"
+        width="2048"
+        height="1152"
+        sizes="(min-width: 1024px) 50vw, 100vw"
+        class="rounded-lg shadow-2xl ring ring-default w-full object-contain aspect-[16/9]"
         loading="eager"
         decoding="async"
         fetchpriority="high"
