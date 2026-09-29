@@ -32,7 +32,7 @@ const { data: newsRes } = await useFetch<{ data: NewsItem[] }>('/api/breaking-ne
 const news = computed(() => newsRes.value.data.slice(0, 3))
 
 function statValue(category: Statistic['category']): { value: number; period: string } {
-  const list = stats.value.filter((s) => s.category === category)
+  const list = stats.value.filter((s) => s.category === category && s.jenjang !== null)
   const total = list.reduce((sum, r) => sum + r.value, 0)
   return { value: total, period: list[0]?.period ?? '-' }
 }
@@ -45,6 +45,7 @@ const services = [
   { to: '/informasi/surat', icon: 'i-lucide-file-text', title: 'Surat Informasi Dapodik', desc: 'Kumpulan surat edaran dan pemberitahuan resmi.' },
   { to: '/ptk/syarat-pengajuan-nuptk', icon: 'i-lucide-users', title: 'Layanan PTK', desc: 'Syarat NUPTK, mutasi, dan penambahan PTK.' },
   { to: '/peserta-didik/syarat-mutasi-peserta-didik', icon: 'i-lucide-backpack', title: 'Layanan Peserta Didik', desc: 'Syarat mutasi dan penanganan residu.' },
+  { to: '/peserta-didik/residu-peserta-didik', icon: 'i-lucide-backpack', title: 'Residu Peserta Didik', desc: 'Penanganan Residu Peserta Didik.' },
   { to: '/sarana/syarat-pengajuan-sarpras', icon: 'i-lucide-school', title: 'Sarana Prasarana', desc: 'Pengajuan dan penghapusan sarpras.' },
   { to: '/informasi/link', icon: 'i-lucide-link', title: 'Link Informasi', desc: 'Tautan penting seputar Dapodik.' },
   { to: '/pengaduan', icon: 'i-lucide-megaphone', title: 'Pengaduan', desc: 'Sampaikan kendala pendataan Dapodik.' },

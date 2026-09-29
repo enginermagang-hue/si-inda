@@ -20,6 +20,10 @@ export const kabupatenList: Kabupaten[] = [
   { value: 'kabupaten-rote-ndao', label: 'Kabupaten Rote Ndao' },
   { value: 'kabupaten-sabu-raijua', label: 'Kabupaten Sabu Raijua' },
   { value: 'kabupaten-sikka', label: 'Kabupaten Sikka' },
+  { value: 'kabupaten-sumba-barat', label: 'Kabupaten Sumba Barat' },
+  { value: 'kabupaten-sumba-barat-daya', label: 'Kabupaten Sumba Barat Daya' },
+  { value: 'kabupaten-sumba-tengah', label: 'Kabupaten Sumba Tengah' },
+  { value: 'kabupaten-sumba-timur', label: 'Kabupaten Sumba Timur' },
   { value: 'kabupaten-timor-tengah-selatan', label: 'Kabupaten Timor Tengah Selatan' },
   { value: 'kabupaten-timor-tengah-utara', label: 'Kabupaten Timor Tengah Utara' },
 ]
