@@ -32,6 +32,9 @@ const filteredData = computed(() => {
 const chartEl = ref<HTMLDivElement | null>(null)
 let chart: any = null
 
+const colorMode = useColorMode()
+const isDark = computed(() => colorMode.value === 'dark')
+
 const series = computed(() => {
   if (props.category === 'satuan_pendidikan') {
     return [
@@ -49,52 +52,127 @@ const series = computed(() => {
   }
   if (props.category === 'guru' || props.category === 'tendik') {
     return [
-      { name: 'PNS', data: filteredData.value.map((d) => d.pns || 0) as number[] },
-      { name: 'Non-PNS', data: filteredData.value.map((d) => d.non_pns || 0) as number[] },
+      { name: 'ASN', data: filteredData.value.map((d) => d.pns || 0) as number[] },
+      { name: 'Non-ASN', data: filteredData.value.map((d) => d.non_pns || 0) as number[] },
     ]
   }
   return []
 })
 
+/** Donut saat filter per kabupaten (peserta_didik & tendik): agregat 2 kategori. */
+const showDonut = computed(
+  () =>
+    selectedKabupaten.value !== 'all' &&
+    (props.category === 'peserta_didik' || props.category === 'tendik'),
+)
+
+const donutConfig = computed(() => {
+  if (props.category === 'peserta_didik') {
+    const laki = filteredData.value.reduce((s, d) => s + (d.laki || 0), 0)
+    const perempuan = filteredData.value.reduce((s, d) => s + (d.perempuan || 0), 0)
+    return { series: [laki, perempuan], labels: ['Laki-laki', 'Perempuan'] }
+  }
+  const asn = filteredData.value.reduce((s, d) => s + (d.pns || 0), 0)
+  const nonAsn = filteredData.value.reduce((s, d) => s + (d.non_pns || 0), 0)
+  return { series: [asn, nonAsn], labels: ['ASN', 'Non-ASN'] }
+})
+
+const donutOptions = computed(() => {
+  return {
+    chart: {
+      type: 'donut' as const,
+      toolbar: { show: true },
+      animations: { enabled: true },
+      foreColor: isDark.value ? '#cbd5e1' : '#475569',
+    },
+    series: donutConfig.value.series,
+    labels: donutConfig.value.labels,
+    dataLabels: {
+      enabled: true,
+      formatter: (val: number, opts: any) =>
+        (donutConfig.value.series[opts?.seriesIndex] ?? val).toLocaleString('id-ID'),
+      style: { colors: [isDark.value ? '#f1f5f9' : '#1f2937'] },
+    },
+    tooltip: {
+      theme: isDark.value ? 'dark' : 'light',
+      y: {
+        formatter: (val: number) => val.toLocaleString('id-ID'),
+      },
+    },
+    legend: {
+      position: 'bottom' as const,
+      horizontalAlign: 'center' as const,
+      fontSize: '14px',
+    },
+    colors: ['#6366f1', '#10b981'],
+  }
+})
+
+/** Label pendek untuk sumbu-x (jenjang saja); label lengkap ada di tooltip. */
 const xaxisCategories = computed(() => {
-  return filteredData.value.map((d) => `${d.jenjang} - ${d.kabupaten || '-'}`)
+  return filteredData.value.map((d) => d.jenjang || '-')
+})
+
+/** Label lengkap untuk tooltip: jenjang + kabupaten. */
+const tooltipTitles = computed(() => {
+  return filteredData.value.map((d) => `${d.jenjang || '-'} — ${d.kabupaten || '-'}`)
 })
 
 const chartOptions = computed(() => {
   return {
     chart: {
-      type: 'bar' as const,
+      type: 'area' as const,
       toolbar: { show: true },
       animations: { enabled: true },
-    },
-    plotOptions: {
-      bar: { horizontal: false, columnWidth: '60%', borderRadius: 4 },
-    },
-    dataLabels: {
-      enabled: true,
-      formatter: (val: number) => val.toLocaleString('id-ID'),
-      style: { colors: ['#1f2937'] },
+      zoom: { enabled: true },
+      foreColor: isDark.value ? '#cbd5e1' : '#475569',
     },
     stroke: {
       show: true,
-      width: 2,
-      colors: ['#ffffff'],
+      width: 3,
+      curve: 'smooth' as const,
+    },
+    fill: {
+      type: 'gradient' as const,
+      gradient: {
+        shadeIntensity: 1,
+        opacityFrom: 0.45,
+        opacityTo: 0.05,
+      },
+    },
+    markers: {
+      size: 4,
+      hover: { size: 6 },
+    },
+    dataLabels: {
+      enabled: false,
     },
     tooltip: {
+      theme: isDark.value ? 'dark' : 'light',
+      x: {
+        formatter: (_val: string, opts?: { dataPointIndex?: number }) =>
+          tooltipTitles.value[opts?.dataPointIndex ?? -1] ?? _val,
+      },
       y: {
         formatter: (val: number) => val.toLocaleString('id-ID'),
       },
     },
     xaxis: {
       categories: xaxisCategories.value,
+      tickAmount: 10,
+      labels: {
+        rotate: -45,
+        trim: true,
+        hideOverlappingLabels: true,
+      },
     },
     yaxis: {
       title: {
         text: 'Jumlah',
       },
-    },
-    fill: {
-      opacity: 1,
+      labels: {
+        formatter: (val: number) => Math.round(val).toLocaleString('id-ID'),
+      },
     },
     colors: ['#6366f1', '#10b981', '#f59e0b'],
   }
@@ -106,10 +184,15 @@ function renderChart() {
     chart.destroy()
   }
   import('apexcharts').then((mod) => {
-    chart = new mod.default(chartEl.value, {
-      ...chartOptions.value,
-      series: series.value,
-    })
+    chart = new mod.default(
+      chartEl.value,
+      showDonut.value
+        ? donutOptions.value
+        : {
+            ...chartOptions.value,
+            series: series.value,
+          },
+    )
     chart.render()
   })
 }
@@ -119,7 +202,7 @@ onMounted(() => {
 })
 
 watch(
-  () => [selectedKabupaten.value, props.data, props.category] as const,
+  () => [selectedKabupaten.value, props.data, props.category, isDark.value] as const,
   () => {
     renderChart()
   }

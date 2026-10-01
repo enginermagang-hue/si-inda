@@ -73,11 +73,6 @@ function getItems(state: 'collapsed' | 'expanded') {
       to: '/admin/berita'
     },
     {
-      label: 'Pengaduan',
-      icon: 'i-lucide-message-square',
-      to: '/admin/pengaduan'
-    },
-    {
       label: 'Pengunjung',
       icon: 'i-lucide-eye',
       to: '/admin/pengunjung'

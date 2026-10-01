@@ -25,16 +25,3 @@ export const STAT_CATEGORIES = ['satuan_pendidikan', 'peserta_didik', 'guru', 't
 export type StatCategory = (typeof STAT_CATEGORIES)[number]
 
 export const MENU_GROUPS = ['ptk', 'peserta_didik', 'sarana'] as const
-
-export const COMPLAINT_CATEGORIES = [
-  'NUPTK',
-  'Mutasi PTK',
-  'Penambahan PTK',
-  'Mutasi Peserta Didik',
-  'Residu Peserta Didik',
-  'Sarana Prasarana',
-  'Aplikasi / Teknis',
-  'Lainnya',
-]
-
-export const COMPLAINT_STATUS = ['baru', 'diproses', 'selesai'] as const

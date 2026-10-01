@@ -5,3 +5,55 @@
   --font-sans: 'Noto Sans', system-ui, sans-serif;
   --text-base: 1.0625rem;
 }
+
+/* Brand primary: #1B4EF5 (menimpa palet bawaan Nuxt UI).
+   Utilities Nuxt UI membaca var(--ui-color-primary-*) saat runtime,
+   jadi override dilakukan di :root, bukan di @theme. */
+:root {
+  --ui-color-primary-50: color-mix(in srgb, #1B4EF5 5%, white);
+  --ui-color-primary-100: color-mix(in srgb, #1B4EF5 12%, white);
+  --ui-color-primary-200: color-mix(in srgb, #1B4EF5 25%, white);
+  --ui-color-primary-300: color-mix(in srgb, #1B4EF5 45%, white);
+  --ui-color-primary-400: color-mix(in srgb, #1B4EF5 68%, white);
+  --ui-color-primary-500: #1B4EF5;
+  --ui-color-primary-600: color-mix(in srgb, #1B4EF5 88%, black);
+  --ui-color-primary-700: color-mix(in srgb, #1B4EF5 74%, black);
+  --ui-color-primary-800: color-mix(in srgb, #1B4EF5 58%, black);
+  --ui-color-primary-900: color-mix(in srgb, #1B4EF5 42%, black);
+  --ui-color-primary-950: color-mix(in srgb, #1B4EF5 26%, black);
+}
+
+/* Brand teks navbar publik: mendukung tema terang & gelap.
+   Basis memakai warna teks terang/gelap, aksen memakai primary brand. */
+.site-brand {
+  font-weight: 800;
+  font-size: 1.0625rem;
+  letter-spacing: -0.02em;
+  line-height: 1.25rem;
+  white-space: nowrap;
+  color: #0f172b;
+}
+.dark .site-brand {
+  color: #f8fafc;
+}
+.site-brand-accent {
+  color: var(--ui-color-primary-500);
+}
+.site-brand-wrap {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.15;
+}
+.site-subbrand {
+  font-size: 0.625rem;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 220px;
+  color: #64748b;
+}
+.dark .site-subbrand {
+  color: #94a3b8;
+}

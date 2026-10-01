@@ -214,8 +214,8 @@ function removeDetail(category: 'satuan_pendidikan' | 'peserta_didik' | 'guru' |
                 <th class="pb-2 font-medium">Jumlah</th>
                 <th v-if="catKey === 'peserta_didik'" class="pb-2 font-medium">Laki-laki</th>
                 <th v-if="catKey === 'peserta_didik'" class="pb-2 font-medium">Perempuan</th>
-                <th v-if="catKey === 'guru' || catKey === 'tendik'" class="pb-2 font-medium">PNS</th>
-                <th v-if="catKey === 'guru' || catKey === 'tendik'" class="pb-2 font-medium">Non-PNS</th>
+                <th v-if="catKey === 'guru' || catKey === 'tendik'" class="pb-2 font-medium">ASN</th>
+                <th v-if="catKey === 'guru' || catKey === 'tendik'" class="pb-2 font-medium">Non-ASN</th>
                 <th class="pb-2 font-medium">Kabupaten</th>
                 <th class="pb-2 font-medium text-right">Aksi</th>
               </tr>
@@ -286,10 +286,10 @@ function removeDetail(category: 'satuan_pendidikan' | 'peserta_didik' | 'guru' |
 
           <template v-if="editingCategoryKey === 'guru' || editingCategoryKey === 'tendik'">
             <div class="grid gap-3 sm:grid-cols-2">
-              <UFormField label="PNS">
+              <UFormField label="ASN">
                 <UInput v-model.number="editingDetail.pns" type="number" min="0" class="w-full" />
               </UFormField>
-              <UFormField label="Non-PNS">
+              <UFormField label="Non-ASN">
                 <UInput v-model.number="editingDetail.non_pns" type="number" min="0" class="w-full" />
               </UFormField>
             </div>

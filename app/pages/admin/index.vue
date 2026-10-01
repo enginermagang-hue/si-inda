@@ -1,20 +1,19 @@
 <script setup lang="ts">
-import { api, type Complaint } from '~/composables/api'
+import { api } from '~/composables/api'
 
 definePageMeta({ layout: 'admin', middleware: 'admin' })
 
-const counts = ref({ statistik: 0, halaman: 0, surat: 0, link: 0, berita: 0, baru: 0, diproses: 0, pengunjung: 0, today: 0 })
+const counts = ref({ statistik: 0, halaman: 0, surat: 0, link: 0, berita: 0, pengunjung: 0, today: 0 })
 const loading = ref(true)
 
 onMounted(async () => {
   try {
-    const [s, p, l, li, n, c, v] = await Promise.all([
+    const [s, p, l, li, n, v] = await Promise.all([
       api.get<{ data: { categories: Record<string, { detail: any[] }> } }>('/admin/statistics'),
       api.get<{ data: unknown[] }>('/admin/pages'),
       api.get<{ data: unknown[] }>('/admin/letters'),
       api.get<{ data: unknown[] }>('/admin/links'),
       api.get<{ data: unknown[] }>('/admin/news'),
-      api.get<{ data: Complaint[] }>('/admin/complaints'),
       api.get<{ data: { total: number; today: number } }>('/admin/visits/stats?range=all').catch(() => ({ data: { total: 0, today: 0 } })),
     ])
     counts.value = {
@@ -23,8 +22,6 @@ onMounted(async () => {
       surat: l.data.length,
       link: li.data.length,
       berita: n.data.length,
-      baru: c.data.filter((x) => x.status === 'baru').length,
-      diproses: c.data.filter((x) => x.status === 'diproses').length,
       pengunjung: (v.data as { total: number }).total ?? 0,
       today: (v.data as { today: number }).today ?? 0,
     }
@@ -41,7 +38,6 @@ const cards = computed(() => [
   { label: 'Surat Informasi', value: counts.value.surat, to: '/admin/surat' },
   { label: 'Link Informasi', value: counts.value.link, to: '/admin/link' },
   { label: 'Breaking News', value: counts.value.berita, to: '/admin/berita' },
-  { label: 'Pengaduan Baru', value: counts.value.baru, to: '/admin/pengaduan', alert: counts.value.baru > 0 },
   { label: 'Pengunjung Hari Ini', value: counts.value.today, to: '/admin/pengunjung' },
   { label: 'Total Pengunjung', value: counts.value.pengunjung, to: '/admin/pengunjung' },
 ])
@@ -59,17 +55,9 @@ const cards = computed(() => [
         :title="card.label"
         :to="card.to"
         variant="outline"
-        :highlight="card.alert"
       >
-        <p class="text-3xl font-bold" :class="card.alert ? 'text-error' : ''">{{ card.value }}</p>
+        <p class="text-3xl font-bold">{{ card.value }}</p>
       </UPageCard>
     </div>
-    <UAlert
-      v-if="!loading && counts.diproses > 0"
-      color="warning"
-      variant="soft"
-      :title="`${counts.diproses} pengaduan sedang diproses.`"
-      class="mt-4"
-    />
   </div>
 </template>

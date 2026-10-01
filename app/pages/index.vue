@@ -8,16 +8,9 @@ await site.load()
 
 const heroLinks = ref<ButtonProps[]>([
   {
-    label: 'Sampaikan Kendala Dapodik',
-    to: '/pengaduan',
-    icon: 'i-lucide-megaphone',
-    color: 'primary',
-  },
-  {
     label: 'Lihat Statistik',
     to: '/statistik',
-    color: 'neutral',
-    variant: 'subtle',
+    color: 'primary',
     trailingIcon: 'i-lucide-arrow-right',
   },
 ])
@@ -48,7 +41,6 @@ const services = [
   { to: '/peserta-didik/residu-peserta-didik', icon: 'i-lucide-backpack', title: 'Residu Peserta Didik', desc: 'Penanganan Residu Peserta Didik.' },
   { to: '/sarana/syarat-pengajuan-sarpras', icon: 'i-lucide-school', title: 'Sarana Prasarana', desc: 'Pengajuan dan penghapusan sarpras.' },
   { to: '/informasi/link', icon: 'i-lucide-link', title: 'Link Informasi', desc: 'Tautan penting seputar Dapodik.' },
-  { to: '/pengaduan', icon: 'i-lucide-megaphone', title: 'Pengaduan', desc: 'Sampaikan kendala pendataan Dapodik.' },
 ]
 </script>
 

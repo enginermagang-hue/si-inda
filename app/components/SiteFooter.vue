@@ -14,7 +14,6 @@ const bottomNav: NavigationMenuItem[] = [
   { label: 'Beranda', to: '/' },
   { label: 'Statistik', to: '/statistik' },
   { label: 'Layanan PTK', to: '/ptk/syarat-pengajuan-nuptk' },
-  { label: 'Pengaduan', to: '/pengaduan' },
   { label: 'FAQ', to: '/faq' },
 ]
 
@@ -22,7 +21,6 @@ const layananLinks: Array<{ label: string; to: string }> = [
   { label: 'Statistik Dapodik', to: '/statistik' },
   { label: 'Pengajuan NUPTK & Mutasi', to: '/ptk/syarat-pengajuan-nuptk' },
   { label: 'Peserta Didik & Sarana', to: '/peserta-didik/syarat-mutasi-peserta-didik' },
-  { label: 'Pengaduan Kendala Dapodik', to: '/pengaduan' },
 ]
 </script>
 

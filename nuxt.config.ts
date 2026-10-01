@@ -38,6 +38,8 @@ export default defineNuxtConfig({
     '/statistik/peserta-didik': { redirect: '/statistik' },
     '/statistik/guru': { redirect: '/statistik' },
     '/statistik/tendik': { redirect: '/statistik' },
+    '/pengaduan': { redirect: '/' },
+    '/admin/pengaduan': { redirect: '/admin' },
   },
 
   runtimeConfig: {

@@ -129,7 +129,7 @@ async function main() {
       .insert(breakingNews)
       .values({
         title: 'Selamat datang di microsite layanan Dapodik',
-        body: 'Informasi, syarat layanan, statistik, dan pengaduan kini terpusat di satu tempat.',
+        body: 'Informasi, syarat layanan, dan statistik kini terpusat di satu tempat.',
         isActive: 1,
       })
       .returning()

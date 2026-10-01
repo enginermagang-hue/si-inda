@@ -115,27 +115,6 @@ export const faqSearchLogs = sqliteTable('faq_search_logs', {
   createdAt: text('created_at').notNull().$defaultFn(now),
 })
 
-/**
- * Pengaduan / penyampaian kendala Dapodik dari pengunjung.
- * status: 'baru' | 'diproses' | 'selesai'
- */
-export const complaints = sqliteTable('complaints', {
-  id: integer('id').primaryKey({ autoIncrement: true }),
-  nama: text('nama').notNull(),
-  kontak: text('kontak').notNull(),
-  kategori: text('kategori').notNull().default('Lainnya'),
-  isi: text('isi').notNull(),
-  sekolah: text('sekolah').notNull().default(''),
-  status: text('status').notNull().default('baru'),
-  adminNote: text('admin_note'),
-  /** URL publik lampiran: path relatif lokal (uploads/...) atau URL Dropbox. */
-  filePath: text('file_path'),
-  /** Path internal Dropbox untuk hapus (NULL untuk driver lokal). */
-  dropboxPath: text('dropbox_path'),
-  createdAt: text('created_at').notNull().$defaultFn(now),
-  updatedAt: text('updated_at').notNull().$defaultFn(now),
-})
-
 /** Hit pengunjung per pageview (hit mentah). */
 export const visits = sqliteTable('visits', {
   id: integer('id').primaryKey({ autoIncrement: true }),

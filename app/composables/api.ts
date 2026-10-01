@@ -148,32 +148,6 @@ export interface NewsItem {
   images: NewsImage[]
 }
 
-export interface Complaint {
-  id: number
-  nama: string
-  kontak: string
-  sekolah: string
-  kategori: string
-  isi: string
-  status: 'baru' | 'diproses' | 'selesai'
-  adminNote: string | null
-  filePath: string | null
-  dropboxPath: string | null
-  createdAt: string
-  updatedAt: string
-}
-
-export interface ComplaintStatus {
-  id: number
-  sekolah: string
-  kategori: string
-  status: 'baru' | 'diproses' | 'selesai'
-  adminNote: string | null
-  filePath: string | null
-  createdAt: string
-  updatedAt: string
-}
-
 export interface PublicSettings {
   site_name: string
   site_tagline: string
@@ -219,14 +193,3 @@ export const STAT_META: Record<Statistic['category'], { title: string; subtitle:
     route: '/statistik',
   },
 }
-
-export const COMPLAINT_CATEGORIES = [
-  'NUPTK',
-  'Mutasi PTK',
-  'Penambahan PTK',
-  'Mutasi Peserta Didik',
-  'Residu Peserta Didik',
-  'Sarana Prasarana',
-  'Aplikasi / Teknis',
-  'Lainnya',
-]

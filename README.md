@@ -45,7 +45,7 @@ Login admin: `http://localhost:3000/admin/login`
 
 `admins`, `settings`, `content_pages` (7 halaman Syarat…),
 `statistics` (satuan_pendidikan, peserta_didik, guru, tendik — tanpa PTK),
-`letters` (+ `dropbox_path`), `sops` (gambar SOP, + `dropbox_path`), `info_links`, `breaking_news`, `complaints`.
+`letters` (+ `dropbox_path`), `sops` (gambar SOP, + `dropbox_path`), `info_links`, `breaking_news`.
 
 ## Deploy ke Vercel
 
@@ -62,4 +62,4 @@ Framework Nuxt terdeteksi otomatis (preset Nitro). Isi Environment Variables
 | `NUXT_ADMIN_*` | hanya bila ingin seed ulang via lokal |
 
 Migrasi production dijalankan lokal: isi env Turso di shell lalu `npm run db:migrate`.
-Uji production: login admin → upload 1 PDF → buka link PDF → submit 1 pengaduan.
+Uji production: login admin → upload 1 PDF → buka link PDF.

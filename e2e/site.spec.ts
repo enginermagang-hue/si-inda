@@ -10,9 +10,9 @@ test('halaman statistik bisa dibuka', async ({ page }) => {
   await expect(page.locator('h1')).toContainText('Statistik Dapodik')
 })
 
-test('halaman pengaduan bisa dibuka dan form ada', async ({ page }) => {
+test('/pengaduan redirect ke beranda', async ({ page }) => {
   await page.goto('/pengaduan')
-  await expect(page.locator('h1')).toContainText('Kendala Dapodik')
+  await expect(page).toHaveURL('/')
 })
 
 test('halaman login admin bisa dibuka', async ({ page }) => {

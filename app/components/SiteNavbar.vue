@@ -43,16 +43,25 @@ const fallbackSarana = [
 
 const items = computed(() => [
   {
-    label: 'Statistik Dapodik',
+    label: 'Beranda',
+    to: '/',
+    active: route.path === '/',
+  },
+  {
+    label: 'Statistik',
     to: '/statistik',
     active: route.path.startsWith('/statistik'),
   },
   {
+    label: 'Info Terbaru',
+    to: '/informasi/berita',
+    active: route.path.startsWith('/informasi/berita'),
+  },
+  {
     label: 'Informasi',
     children: [
-      { label: 'Surat Informasi Dapodik', to: '/informasi/surat' },
-      { label: 'Link Informasi Dapodik', to: '/informasi/link' },
-      { label: 'Breaking News', to: '/informasi/berita' },
+      { label: 'Surat Dapodik', to: '/informasi/surat' },
+      { label: 'Link Dapodik', to: '/informasi/link' },
       { label: 'FAQ', to: '/faq' },
     ],
   },
@@ -78,25 +87,36 @@ const items = computed(() => [
     })),
   },
   {
-    label: 'SOP Pelayanan Dapodik',
+    label: 'SOP',
     to: '/sop',
     active: route.path.startsWith('/sop'),
   },
   {
-    label: 'Pengaduan',
-    to: '/pengaduan',
-    active: route.path.startsWith('/pengaduan'),
-  },
+    label: 'Faq',
+    to: '/faq',
+    active: route.path.startsWith('/faq')
+  }
 ])
 </script>
 
 <template>
-  <UHeader :title="site.settings.site_name">
+  <UHeader
+    :title="site.settings.site_name"
+    :ui="{
+      center: 'hidden min-w-0 justify-center lg:hidden xl:flex',
+      toggle: 'lg:flex xl:hidden',
+      content: 'lg:block xl:hidden',
+      overlay: 'lg:block xl:hidden',
+    }"
+  >
     <template #title>
-      <img src="/logo-nav.png" alt="Logo" class="h-6 w-auto">
+      <span class="site-brand-wrap">
+        <span class="site-brand">SI-<span class="site-brand-accent">INDAH</span></span>
+        <span class="site-subbrand">Sistem Informasi Dapodik</span>
+      </span>
     </template>
 
-    <UNavigationMenu arrow content-orientation="vertical" :items="items" class="w-full justify-center" :ui="{ content: 'w-auto min-w-60', childLinkLabel: 'whitespace-normal break-words' }" />
+    <UNavigationMenu arrow content-orientation="vertical" :items="items" class="w-full min-w-0 justify-center" :ui="{ root: 'gap-1', link: 'px-2 text-[13px] gap-1', content: 'w-auto min-w-60', childLinkLabel: 'whitespace-normal break-words' }" />
 
     <template #right>
       <UColorModeButton />

@@ -34,7 +34,7 @@ const donutSeries = computed(() => {
   return [totalPNS, totalNonPNS]
 })
 
-const donutLabels = ['PNS', 'Non-PNS']
+const donutLabels = ['ASN', 'Non-ASN']
 
 const totalGuru = computed(() => {
   return donutSeries.value[0] + donutSeries.value[1]
@@ -43,17 +43,22 @@ const totalGuru = computed(() => {
 const chartEl = ref<HTMLDivElement | null>(null)
 let chart: any = null
 
+const colorMode = useColorMode()
+const isDark = computed(() => colorMode.value === 'dark')
+
 function renderChart() {
   if (!chartEl.value) return
   if (chart) {
     chart.destroy()
   }
+  const dark = isDark.value
   import('apexcharts').then((mod) => {
     chart = new mod.default(chartEl.value, {
       chart: {
         type: 'donut' as const,
         toolbar: { show: true },
         animations: { enabled: true },
+        foreColor: dark ? '#cbd5e1' : '#475569',
       },
       series: donutSeries.value,
       labels: donutLabels,
@@ -65,9 +70,10 @@ function renderChart() {
           const rawValue = seriesData[seriesIdx] ?? val
           return rawValue.toLocaleString('id-ID')
         },
-        style: { colors: ['#1f2937'] },
+        style: { colors: [dark ? '#f1f5f9' : '#1f2937'] },
       },
       tooltip: {
+        theme: dark ? 'dark' : 'light',
         y: {
           formatter: (val: number) => val.toLocaleString('id-ID'),
         },
@@ -104,7 +110,7 @@ onMounted(() => {
 })
 
 watch(
-  () => [selectedKabupaten.value, props.data] as const,
+  () => [selectedKabupaten.value, props.data, isDark.value] as const,
   () => {
     renderChart()
   }
