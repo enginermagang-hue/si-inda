@@ -61,8 +61,7 @@ const items = computed(() => [
     label: 'Informasi',
     children: [
       { label: 'Surat Dapodik', to: '/informasi/surat' },
-      { label: 'Link Dapodik', to: '/informasi/link' },
-      { label: 'FAQ', to: '/faq' },
+      { label: 'Link Dapodik', to: '/informasi/link' }
     ],
   },
   {
@@ -92,7 +91,7 @@ const items = computed(() => [
     active: route.path.startsWith('/sop'),
   },
   {
-    label: 'Faq',
+    label: 'FAQ',
     to: '/faq',
     active: route.path.startsWith('/faq')
   }
