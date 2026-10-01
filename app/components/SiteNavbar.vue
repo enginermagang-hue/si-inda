@@ -110,7 +110,7 @@ const items = computed(() => [
   >
     <template #title>
       <span class="site-brand-wrap">
-        <span class="site-brand">SI-<span class="site-brand-accent">INDAH</span></span>
+        <span class="site-brand">SI-<span class="site-brand-accent">INDA</span></span>
         <span class="site-subbrand">Sistem Informasi Dapodik</span>
       </span>
     </template>
