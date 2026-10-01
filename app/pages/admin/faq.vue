@@ -79,6 +79,18 @@ async function remove(id: number): Promise<void> {
   await api.del(`/admin/faqs/${id}`)
   await load()
 }
+
+async function removeKeyword(keyword: string): Promise<void> {
+  if (!confirm(`Hapus semua log pencarian "${keyword}"?`)) return
+  await api.del(`/admin/faqs/search-logs?keyword=${encodeURIComponent(keyword)}`)
+  await load()
+}
+
+async function removeAllKeywords(): Promise<void> {
+  if (!confirm('Hapus seluruh riwayat pencarian FAQ?')) return
+  await api.del('/admin/faqs/search-logs?all=1')
+  await load()
+}
 </script>
 
 <template>
@@ -101,9 +113,37 @@ async function remove(id: number): Promise<void> {
         </ul>
       </UCard>
       <UCard>
-        <template #header><p class="font-semibold">Kata kunci paling dicari</p></template>
+        <template #header>
+          <div class="flex items-center justify-between">
+            <p class="font-semibold">Kata kunci paling dicari</p>
+            <UButton
+              v-if="stats?.topKeywords?.length"
+              variant="link"
+              color="error"
+              size="sm"
+              icon="i-lucide-trash-2"
+              title="Hapus semua riwayat pencarian"
+              @click="removeAllKeywords"
+              >Hapus semua</UButton
+            >
+          </div>
+        </template>
         <ul class="space-y-1 text-sm">
-          <li v-for="k in stats?.topKeywords" :key="k.keyword">{{ k.keyword }} <span class="text-muted">· {{ k.count }}×</span></li>
+          <li
+            v-for="k in stats?.topKeywords"
+            :key="k.keyword"
+            class="flex items-center justify-between gap-2"
+          >
+            <span>{{ k.keyword }} <span class="text-muted">· {{ k.count }}×</span></span>
+            <UButton
+              variant="link"
+              color="error"
+              size="xs"
+              icon="i-lucide-trash-2"
+              title="Hapus kata kunci ini"
+              @click="removeKeyword(k.keyword)"
+            />
+          </li>
         </ul>
       </UCard>
     </div>
