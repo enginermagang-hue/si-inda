@@ -3,7 +3,7 @@ import { api, type AdminMe, type PublicSettings } from '~/composables/api'
 export const useSiteStore = defineStore('site', () => {
   const settings = ref<PublicSettings>({
     site_name: 'Si-Inda',
-    site_tagline: 'Microsite informasi dan pelayanan pendataan Dapodik',
+    site_tagline: 'Microsite sistem informasi dapodik',
     contact_wa: '',
     footer_text: '',
   })
